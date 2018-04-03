@@ -36,6 +36,8 @@ enum InstallResult {
   INSTALL_RETRY,
   INSTALL_KEY_INTERRUPTED,
   INSTALL_REBOOT,
+  INSTALL_UNVERIFIED,
+  INSTALL_DOWNGRADE,
 };
 
 enum class OtaType {
@@ -48,7 +50,7 @@ enum class OtaType {
 // successful installation if |should_wipe_cache| is true or an updater command asks to wipe the
 // cache.
 int install_package(const std::string& package, bool should_wipe_cache, bool needs_mount,
-                    int retry_count);
+                    int retry_count, bool verify, bool allow_ab_downgrade);
 
 // Verifies the package by ota keys. Returns true if the package is verified successfully,
 // otherwise returns false.
@@ -68,4 +70,10 @@ bool verify_package_compatibility(ZipArchiveHandle package_zip);
 // Checks if the the metadata in the OTA package has expected values. Returns 0 on success.
 // Mandatory checks: ota-type, pre-device and serial number(if presents)
 // AB OTA specific checks: pre-build version, fingerprint, timestamp.
-int CheckPackageMetadata(const std::map<std::string, std::string>& metadata, OtaType ota_type);
+bool check_verification(bool value);
+int CheckPackageMetadata(const std::map<std::string, std::string>& metadata, OtaType ota_type,
+                         bool allow_ab_downgrade = false);
+
+// Defined in recovery.cpp, just declare it and it will eventually link fine.
+bool ask_to_continue_unverified(bool value);
+bool ask_to_continue_downgrade(bool value);
