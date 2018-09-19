@@ -18,12 +18,10 @@
 #include "btree.hpp"
 #include "MtpDebug.h"
 
-// Constructor
 Tree::Tree(MtpObjectHandle handle, MtpObjectHandle parent, const std::string& name)
 	: Node(handle, parent, name), alreadyRead(false) {
 }
 
-// Destructor
 Tree::~Tree() {
 	for (std::map<MtpObjectHandle, Node*>::iterator it = entries.begin(); it != entries.end(); ++it)
 		delete it->second;

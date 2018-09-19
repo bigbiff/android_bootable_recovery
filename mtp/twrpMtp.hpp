@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 TeamWin - bigbiff and Dees_Troy mtp database conversion to C++
+ * Copyright (C) 2018 TeamWin
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@
 #include "MtpRequestPacket.h"
 #include "MtpResponsePacket.h"
 #include "mtp_MtpDatabase.hpp"
+#include "mtp_MtpServer.hpp"
 
 class twrpMtp {
 	public:

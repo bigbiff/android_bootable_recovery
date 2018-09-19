@@ -12,15 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (C) 2014 TeamWin - bigbiff and Dees_Troy mtp database conversion to C++
  */
 
 #ifndef _MTP_OBJECT_INFO_H
 #define _MTP_OBJECT_INFO_H
 
 #include "MtpTypes.h"
-
 
 class MtpDataPacket;
 
@@ -48,13 +45,12 @@ public:
     char*               mKeywords;
 
 public:
-                        MtpObjectInfo(MtpObjectHandle handle);
+    explicit            MtpObjectInfo(MtpObjectHandle handle);
     virtual             ~MtpObjectInfo();
 
-    void                read(MtpDataPacket& packet);
+    bool                read(MtpDataPacket& packet);
 
     void                print();
 };
-
 
 #endif // _MTP_OBJECT_INFO_H

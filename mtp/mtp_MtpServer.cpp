@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Copyright (C) 2014 TeamWin - bigbiff and Dees_Troy mtp database conversion to C++
+ * Additional Copyright (C) 2018 TeamWin
  */
 
 #include <utils/Log.h>
@@ -26,6 +26,7 @@
 #include <vector>
 #include <utils/threads.h>
 #include <pthread.h>
+#include <cutils/properties.h>
 
 #include "mtp_MtpServer.hpp"
 #include "MtpServer.h"
@@ -35,30 +36,31 @@
 
 #include <string>
 
+void twmtp_MtpServer::set_device_info() {
+	char property[512];
+	property_get("ro.build.product", property, "unknown manufacturer");
+	mtpinfo.deviceInfoManufacturer = android::String8(property);
+	property_get("ro.product.model", property, "unknown model");
+	mtpinfo.deviceInfoModel = android::String8(property);
+	mtpinfo.deviceInfoDeviceVersion = android::String8("None");
+	property_get("ro.serialno", property, "unknown serial number");
+	mtpinfo.deviceInfoSerialNumber = android::String8(property);
+}
+
 void twmtp_MtpServer::start()
 {
 	usePtp =  false;
 	MyMtpDatabase* mtpdb = new MyMtpDatabase();
-	/* Sleep for a bit before we open the MTP USB device because some
-	 * devices are not ready due to the kernel not responding to our
-	 * sysfs requests right away.
-	 */
-	usleep(800000);
-#ifdef USB_MTP_DEVICE
-#define STRINGIFY(x) #x
-#define EXPAND(x) STRINGIFY(x)
-	const char* mtp_device = EXPAND(USB_MTP_DEVICE);
-	MTPI("Using '%s' for MTP device.\n", EXPAND(USB_MTP_DEVICE));
-#else
-	const char* mtp_device = "/dev/mtp_usb";
-#endif
-	int fd = open(mtp_device, O_RDWR);
-	if (fd < 0) {
-		MTPE("could not open MTP driver, errno: %d\n", errno);
-		return;
-	}
-	MTPD("fd: %d\n", fd);
-	server = new MtpServer(mtpdb, usePtp, 0, 0664, 0775);
+	MTPD("launching server\n");
+	server = new MtpServer(mtpdb,\ 
+		usePtp,\
+		0, \
+		0664, \
+		0775,
+		mtpinfo.deviceInfoManufacturer, \
+		mtpinfo.deviceInfoModel, \
+		mtpinfo.deviceInfoDeviceVersion, \
+		mtpinfo.deviceInfoSerialNumber);
 	refserver = server;
 	MTPI("created new mtpserver object\n");
 	add_storage();
@@ -69,8 +71,8 @@ void twmtp_MtpServer::start()
 	pthread_create(&thread, NULL, p, this);
 	// This loop restarts the MTP process if the device is unplugged and replugged in
 	while (true) {
-		server->run(fd);
-		fd = open(mtp_device, O_RDWR);
+		server->configure(usePtp);
+		server->run();
 		usleep(800000);
 	}
 }

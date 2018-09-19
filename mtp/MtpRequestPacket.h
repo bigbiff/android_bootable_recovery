@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (C) 2014 TeamWin - bigbiff and Dees_Troy mtp database conversion to C++
  */
 
 #ifndef _MTP_REQUEST_PACKET_H
@@ -22,17 +20,18 @@
 #include "MtpPacket.h"
 #include "mtp.h"
 
+class IMtpHandle;
 struct usb_request;
-
 
 class MtpRequestPacket : public MtpPacket {
 
 public:
                         MtpRequestPacket();
     virtual             ~MtpRequestPacket();
+
 #ifdef MTP_DEVICE
-    // fill our buffer with data from the given file descriptor
-    int                 read(int fd);
+    // fill our buffer with data from the given usb handle
+    int                 read(IMtpHandle *h);
 #endif
 
 #ifdef MTP_HOST
@@ -43,7 +42,10 @@ public:
     inline MtpOperationCode    getOperationCode() const { return getContainerCode(); }
     inline void                setOperationCode(MtpOperationCode code)
                                                     { return setContainerCode(code); }
-};
+    inline int                  getParameterCount() const { return mParameterCount; }
 
+private:
+    int     mParameterCount;
+};
 
 #endif // _MTP_REQUEST_PACKET_H

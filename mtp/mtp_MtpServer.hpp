@@ -41,6 +41,13 @@ typedef struct Storage {
 
 typedef std::vector<storage*> storages;
 
+struct mtp_info {
+	MtpString deviceInfoManufacturer;
+	MtpString deviceInfoModel;
+	MtpString deviceInfoDeviceVersion;
+	MtpString deviceInfoSerialNumber;
+};
+
 class twmtp_MtpServer {
 	public:
 		void start();
@@ -52,6 +59,9 @@ class twmtp_MtpServer {
 		void set_storages(storages* mtpstorages);
 		void set_read_pipe(int pipe);
 		storages *stores;
+		struct mtp_info mtpinfo;
+		void set_device_info();
+
 	private:
 		typedef int (twmtp_MtpServer::*ThreadPtr)(void);
 		typedef void* (*PThreadPtr)(void *);
@@ -60,6 +70,9 @@ class twmtp_MtpServer {
 		MtpServer* server;
 		MtpServer* refserver;
 		int mtp_read_pipe;
-
+                MtpString deviceInfoManufacturer;
+                MtpString deviceInfoModel;
+                MtpString deviceInfoDeviceVersion;
+                MtpString deviceInfoSerialNumber;
 };
 #endif

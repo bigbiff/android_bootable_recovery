@@ -12,17 +12,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (C) 2014 TeamWin - bigbiff and Dees_Troy mtp database conversion to C++
  */
 
 #ifndef _MTP_TYPES_H
 #define _MTP_TYPES_H
 
 #include <stdint.h>
-#include <vector>
-#include <utils/Vector.h>
-#include <utils/String8.h>
+#include "utils/String8.h"
+#include "utils/Vector.h"
 
 typedef int32_t int128_t[4];
 typedef uint32_t uint128_t[4];
@@ -52,7 +49,7 @@ class MtpStorage;
 class MtpDevice;
 class MtpProperty;
 
-typedef android::Vector<MtpStorage*> MtpStorageList;
+typedef android::Vector<MtpStorage *> MtpStorageList;
 typedef android::Vector<MtpDevice*> MtpDeviceList;
 typedef android::Vector<MtpProperty*> MtpPropertyList;
 
@@ -74,5 +71,11 @@ typedef UInt32List MtpStorageIDList;
 
 typedef android::String8    MtpString;
 
+enum UrbPacketDivisionMode {
+    // First packet only contains a header.
+    FIRST_PACKET_ONLY_HEADER,
+    // First packet contains payload much as possible.
+    FIRST_PACKET_HAS_PAYLOAD
+};
 
 #endif // _MTP_TYPES_H

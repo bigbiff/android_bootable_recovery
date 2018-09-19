@@ -5,16 +5,18 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *	  http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (C) 2014 TeamWin - bigbiff and Dees_Troy mtp database conversion to C++
  */
+
+#define LOG_TAG "MtpStorageInfo"
+
+#include <inttypes.h>
 
 #include "MtpDebug.h"
 #include "MtpDataPacket.h"
@@ -22,48 +24,51 @@
 #include "MtpStringBuffer.h"
 
 MtpStorageInfo::MtpStorageInfo(MtpStorageID id)
-	:	mStorageID(id),
-		mStorageType(0),
-		mFileSystemType(0),
-		mAccessCapability(0),
-		mMaxCapacity(0),
-		mFreeSpaceBytes(0),
-		mFreeSpaceObjects(0),
-		mStorageDescription(NULL),
-		mVolumeIdentifier(NULL)
+    :   mStorageID(id),
+        mStorageType(0),
+        mFileSystemType(0),
+        mAccessCapability(0),
+        mMaxCapacity(0),
+        mFreeSpaceBytes(0),
+        mFreeSpaceObjects(0),
+        mStorageDescription(NULL),
+        mVolumeIdentifier(NULL)
 {
 }
 
 MtpStorageInfo::~MtpStorageInfo() {
-	if (mStorageDescription)
-		free(mStorageDescription);
-	if (mVolumeIdentifier)
-		free(mVolumeIdentifier);
+    if (mStorageDescription)
+        free(mStorageDescription);
+    if (mVolumeIdentifier)
+        free(mVolumeIdentifier);
 }
 
-void MtpStorageInfo::read(MtpDataPacket& packet) {
-	MtpStringBuffer string;
+bool MtpStorageInfo::read(MtpDataPacket& packet) {
+    MtpStringBuffer string;
 
-	// read the device info
-	mStorageType = packet.getUInt16();
-	mFileSystemType = packet.getUInt16();
-	mAccessCapability = packet.getUInt16();
-	mMaxCapacity = packet.getUInt64();
-	mFreeSpaceBytes = packet.getUInt64();
-	mFreeSpaceObjects = packet.getUInt32();
+    // read the device info
+    if (!packet.getUInt16(mStorageType)) return false;
+    if (!packet.getUInt16(mFileSystemType)) return false;
+    if (!packet.getUInt16(mAccessCapability)) return false;
+    if (!packet.getUInt64(mMaxCapacity)) return false;
+    if (!packet.getUInt64(mFreeSpaceBytes)) return false;
+    if (!packet.getUInt32(mFreeSpaceObjects)) return false;
 
-	packet.getString(string);
-	mStorageDescription = strdup((const char *)string);
-	packet.getString(string);
-	mVolumeIdentifier = strdup((const char *)string);
+    if (!packet.getString(string)) return false;
+    mStorageDescription = strdup((const char *)string);
+    if (!mStorageDescription) return false;
+    if (!packet.getString(string)) return false;
+    mVolumeIdentifier = strdup((const char *)string);
+    if (!mVolumeIdentifier) return false;
+
+    return true;
 }
 
 void MtpStorageInfo::print() {
-	MTPI("Storage Info %08X:\n\tmStorageType: %d\n\tmFileSystemType: %d\n\tmAccessCapability: %d\n",
-			mStorageID, mStorageType, mFileSystemType, mAccessCapability);
-	MTPI("\tmMaxCapacity: %lld\n\tmFreeSpaceBytes: %lld\n\tmFreeSpaceObjects: %d\n",
-			mMaxCapacity, mFreeSpaceBytes, mFreeSpaceObjects);
-	MTPI("\tmStorageDescription: %s\n\tmVolumeIdentifier: %s\n",
-			mStorageDescription, mVolumeIdentifier);
+    ALOGD("Storage Info %08X:\n\tmStorageType: %d\n\tmFileSystemType: %d\n\tmAccessCapability: %d\n",
+            mStorageID, mStorageType, mFileSystemType, mAccessCapability);
+    ALOGD("\tmMaxCapacity: %" PRIu64 "\n\tmFreeSpaceBytes: %" PRIu64 "\n\tmFreeSpaceObjects: %d\n",
+            mMaxCapacity, mFreeSpaceBytes, mFreeSpaceObjects);
+    ALOGD("\tmStorageDescription: %s\n\tmVolumeIdentifier: %s\n",
+            mStorageDescription, mVolumeIdentifier);
 }
-

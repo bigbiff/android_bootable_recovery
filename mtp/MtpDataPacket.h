@@ -12,9 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (C) 2014 TeamWin - bigbiff and Dees_Troy mtp database conversion to c++
- *
  */
 
 #ifndef _MTP_DATA_PACKET_H
@@ -23,16 +20,16 @@
 #include "MtpPacket.h"
 #include "mtp.h"
 
+class IMtpHandle;
 struct usb_device;
 struct usb_request;
-
 
 class MtpStringBuffer;
 
 class MtpDataPacket : public MtpPacket {
 private:
     // current offset for get/put methods
-    uint64_t            mOffset;
+    size_t              mOffset;
 
 public:
                         MtpDataPacket();
@@ -44,17 +41,18 @@ public:
     void                setTransactionID(MtpTransactionID id);
 
     inline const uint8_t*     getData() const { return mBuffer + MTP_CONTAINER_HEADER_SIZE; }
-    inline uint8_t      getUInt8() { return (uint8_t)mBuffer[mOffset++]; }
-    inline int8_t       getInt8() { return (int8_t)mBuffer[mOffset++]; }
-    uint16_t            getUInt16();
-    inline int16_t      getInt16() { return (int16_t)getUInt16(); }
-    uint32_t            getUInt32();
-    inline int32_t      getInt32() { return (int32_t)getUInt32(); }
-    uint64_t            getUInt64();
-    inline int64_t      getInt64() { return (int64_t)getUInt64(); }
-    void                getUInt128(uint128_t& value);
-    inline void         getInt128(int128_t& value) { getUInt128((uint128_t&)value); }
-    void                getString(MtpStringBuffer& string);
+
+    bool                getUInt8(uint8_t& value);
+    inline bool         getInt8(int8_t& value) { return getUInt8((uint8_t&)value); }
+    bool                getUInt16(uint16_t& value);
+    inline bool         getInt16(int16_t& value) { return getUInt16((uint16_t&)value); }
+    bool                getUInt32(uint32_t& value);
+    inline bool         getInt32(int32_t& value) { return getUInt32((uint32_t&)value); }
+    bool                getUInt64(uint64_t& value);
+    inline bool         getInt64(int64_t& value) { return getUInt64((uint64_t&)value); }
+    bool                getUInt128(uint128_t& value);
+    inline bool         getInt128(int128_t& value) { return getUInt128((uint128_t&)value); }
+    bool                getString(MtpStringBuffer& string);
 
     Int8List*           getAInt8();
     UInt8List*          getAUInt8();
@@ -94,15 +92,15 @@ public:
     inline void         putEmptyString() { putUInt8(0); }
     inline void         putEmptyArray() { putUInt32(0); }
 
-
 #ifdef MTP_DEVICE
-    // fill our buffer with data from the given file descriptor
-    int                 read(int fd);
+    // fill our buffer with data from the given usb handle
+    int                 read(IMtpHandle *h);
 
-    // write our data to the given file descriptor
-    int                 write(int fd);
-    int                 writeData(int fd, void* data, uint32_t length);
+    // write our data to the given usb handle
+    int                 write(IMtpHandle *h);
+    int                 writeData(IMtpHandle *h, void* data, uint32_t length);
 #endif
+
 #ifdef MTP_HOST
     int                 read(struct usb_request *request);
     int                 readData(struct usb_request *request, void* buffer, int length);
@@ -110,14 +108,20 @@ public:
     int                 readDataWait(struct usb_device *device);
     int                 readDataHeader(struct usb_request *ep);
 
-    int                 writeDataHeader(struct usb_request *ep, uint32_t length);
-    int                 write(struct usb_request *ep);
-    int                 write(struct usb_request *ep, void* buffer, uint32_t length);
+    // Write a whole data packet with payload to the end point given by a request. |divisionMode|
+    // specifies whether to divide header and payload. See |UrbPacketDivisionMode| for meanings of
+    // each value. Return the number of bytes (including header size) sent to the device on success.
+    // Otherwise -1.
+    int                 write(struct usb_request *request, UrbPacketDivisionMode divisionMode);
+    // Similar to previous write method but it reads the payload from |fd|. If |size| is larger than
+    // MTP_BUFFER_SIZE, the data will be sent by multiple bulk transfer requests.
+    int                 write(struct usb_request *request, UrbPacketDivisionMode divisionMode,
+                              int fd, size_t size);
 #endif
+
     inline bool         hasData() const { return mPacketSize > MTP_CONTAINER_HEADER_SIZE; }
     inline uint32_t     getContainerLength() const { return MtpPacket::getUInt32(MTP_CONTAINER_LENGTH_OFFSET); }
-    void*               getData(int& outLength) const;
+    void*               getData(int* outLength) const;
 };
-
 
 #endif // _MTP_DATA_PACKET_H

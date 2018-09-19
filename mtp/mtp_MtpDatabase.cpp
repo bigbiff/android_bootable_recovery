@@ -181,32 +181,32 @@ int MyMtpDatabase::ALL_PROPERTIES[25] = {
 };
 
 int MyMtpDatabase::SUPPORTED_PLAYBACK_FORMATS[26] = {
-	SUPPORTED_PLAYBACK_FORMAT_UNDEFINED,
-	SUPPORTED_PLAYBACK_FORMAT_ASSOCIATION,
-	SUPPORTED_PLAYBACK_FORMAT_TEXT,
-	SUPPORTED_PLAYBACK_FORMAT_HTML,
-	SUPPORTED_PLAYBACK_FORMAT_WAV,
-	SUPPORTED_PLAYBACK_FORMAT_MP3,
-	SUPPORTED_PLAYBACK_FORMAT_MPEG,
-	SUPPORTED_PLAYBACK_FORMAT_EXIF_JPEG,
-	SUPPORTED_PLAYBACK_FORMAT_TIFF_EP,
-	SUPPORTED_PLAYBACK_FORMAT_BMP,
-	SUPPORTED_PLAYBACK_FORMAT_GIF,
-	SUPPORTED_PLAYBACK_FORMAT_JFIF,
-	SUPPORTED_PLAYBACK_FORMAT_PNG,
-	SUPPORTED_PLAYBACK_FORMAT_TIFF,
-	SUPPORTED_PLAYBACK_FORMAT_WMA,
-	SUPPORTED_PLAYBACK_FORMAT_OGG,
-	SUPPORTED_PLAYBACK_FORMAT_AAC,
-	SUPPORTED_PLAYBACK_FORMAT_MP4_CONTAINER,
-	SUPPORTED_PLAYBACK_FORMAT_MP2,
-	SUPPORTED_PLAYBACK_FORMAT_3GP_CONTAINER,
-	SUPPORTED_PLAYBACK_FORMAT_ABSTRACT_AV_PLAYLIST,
-	SUPPORTED_PLAYBACK_FORMAT_WPL_PLAYLIST,
-	SUPPORTED_PLAYBACK_FORMAT_M3U_PLAYLIST,
-	SUPPORTED_PLAYBACK_FORMAT_PLS_PLAYLIST,
-	SUPPORTED_PLAYBACK_FORMAT_XML_DOCUMENT,
-	SUPPORTED_PLAYBACK_FORMAT_FLAC
+        SUPPORTED_PLAYBACK_FORMAT_UNDEFINED,
+        SUPPORTED_PLAYBACK_FORMAT_ASSOCIATION,
+        SUPPORTED_PLAYBACK_FORMAT_TEXT,
+        SUPPORTED_PLAYBACK_FORMAT_HTML,
+        SUPPORTED_PLAYBACK_FORMAT_WAV,
+        SUPPORTED_PLAYBACK_FORMAT_MP3,
+        SUPPORTED_PLAYBACK_FORMAT_MPEG,
+        SUPPORTED_PLAYBACK_FORMAT_EXIF_JPEG,
+        SUPPORTED_PLAYBACK_FORMAT_TIFF_EP,
+        SUPPORTED_PLAYBACK_FORMAT_BMP,
+        SUPPORTED_PLAYBACK_FORMAT_GIF,
+        SUPPORTED_PLAYBACK_FORMAT_JFIF,
+        SUPPORTED_PLAYBACK_FORMAT_PNG,
+        SUPPORTED_PLAYBACK_FORMAT_TIFF,
+        SUPPORTED_PLAYBACK_FORMAT_WMA,
+        SUPPORTED_PLAYBACK_FORMAT_OGG,
+        SUPPORTED_PLAYBACK_FORMAT_AAC,
+        SUPPORTED_PLAYBACK_FORMAT_MP4_CONTAINER,
+        SUPPORTED_PLAYBACK_FORMAT_MP2,
+        SUPPORTED_PLAYBACK_FORMAT_3GP_CONTAINER,
+        SUPPORTED_PLAYBACK_FORMAT_ABSTRACT_AV_PLAYLIST,
+        SUPPORTED_PLAYBACK_FORMAT_WPL_PLAYLIST,
+        SUPPORTED_PLAYBACK_FORMAT_M3U_PLAYLIST,
+        SUPPORTED_PLAYBACK_FORMAT_PLS_PLAYLIST,
+        SUPPORTED_PLAYBACK_FORMAT_XML_DOCUMENT,
+        SUPPORTED_PLAYBACK_FORMAT_FLAC
 };
 
 MtpObjectHandle MyMtpDatabase::beginSendObject(const char* path,
@@ -440,44 +440,54 @@ MtpResponseCode MyMtpDatabase::setObjectPropertyValue(MtpObjectHandle handle,
 		return MTP_RESPONSE_OBJECT_PROP_NOT_SUPPORTED;
 	}
 	MTPD("MyMtpDatabase::setObjectPropertyValue continuing\n");
-	long longValue = 0;
+
+
+	int8_t int8_t_value;
+	uint8_t uint8_t_value;
+	int16_t int16_t_value;
+	uint16_t uint16_t_value;
+	int32_t int32_t_value;
+	uint32_t uint32_t_value;
+	int64_t int64_t_value;
+	uint64_t uint64_t_value;
 	std::string stringValue;
 
 	switch (type) {
 		case MTP_TYPE_INT8:
 			MTPD("int8\n");
-			longValue = packet.getInt8();
+			packet.getInt8(int8_t_value);
 			break;
 		case MTP_TYPE_UINT8:
 			MTPD("uint8\n");
-			longValue = packet.getUInt8();
+			packet.getUInt8(uint8_t_value);
 			break;
 		case MTP_TYPE_INT16:
 			MTPD("int16\n");
-			longValue = packet.getInt16();
+			packet.getInt16(int16_t_value);
 			break;
 		case MTP_TYPE_UINT16:
 			MTPD("uint16\n");
-			longValue = packet.getUInt16();
+			packet.getUInt16(uint16_t_value);
 			break;
 		case MTP_TYPE_INT32:
 			MTPD("int32\n");
-			longValue = packet.getInt32();
+			packet.getInt32(int32_t_value);
 			break;
 		case MTP_TYPE_UINT32:
 			MTPD("uint32\n");
-			longValue = packet.getUInt32();
+			packet.getUInt32(uint32_t_value);
 			break;
 		case MTP_TYPE_INT64:
 			MTPD("int64\n");
-			longValue = packet.getInt64();
+			packet.getInt64(int64_t_value);
 			break;
 		case MTP_TYPE_UINT64:
 			MTPD("uint64\n");
-			longValue = packet.getUInt64();
+			packet.getUInt64(uint64_t_value);
 			break;
 		case MTP_TYPE_STR:
 			{
+				std::string stringValue;
 				MTPD("string\n");
 				MtpStringBuffer buffer;
 				packet.getString(buffer);

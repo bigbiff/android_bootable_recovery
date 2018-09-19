@@ -12,15 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (C) 2014 TeamWin - bigbiff and Dees_Troy mtp database conversion to C++
  */
 
 #ifndef _MTP_DEVICE_INFO_H
 #define _MTP_DEVICE_INFO_H
 
 struct stat;
-
 
 class MtpDataPacket;
 
@@ -30,7 +27,7 @@ public:
     uint32_t                mVendorExtensionID;
     uint16_t                mVendorExtensionVersion;
     char*                   mVendorExtensionDesc;
-    uint16_t                mFunctionalCode;
+    uint16_t                mFunctionalMode;
     UInt16List*             mOperations;
     UInt16List*             mEvents;
     MtpDevicePropertyList*  mDeviceProperties;
@@ -45,10 +42,9 @@ public:
                             MtpDeviceInfo();
     virtual                 ~MtpDeviceInfo();
 
-    void                    read(MtpDataPacket& packet);
+    bool                    read(MtpDataPacket& packet);
 
     void                    print();
 };
-
 
 #endif // _MTP_DEVICE_INFO_H

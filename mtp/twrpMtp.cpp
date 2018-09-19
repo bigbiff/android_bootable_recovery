@@ -79,6 +79,7 @@ int twrpMtp::start(void) {
 	MTPI("Starting MTP\n");
 	twmtp_MtpServer *mtp = new twmtp_MtpServer();
 	mtp->set_storages(mtpstorages);
+	mtp->set_device_info();
 	mtp->set_read_pipe(mtp_read_pipe);
 	mtp->start();
 	return 0;
@@ -107,6 +108,7 @@ pid_t twrpMtp::forkserver(int mtppipe[2]) {
 		close(mtppipe[0]);
 		_exit(0);
 	} else {
+		MTPD("MTP child PID: %d\n", pid);
 		return pid;
 	}
 	return 0;

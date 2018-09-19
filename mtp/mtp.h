@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (C) 2014 TeamWin - bigbiff and Dees_Troy mtp database conversion to C++
  */
 
 #ifndef _MTP_H
@@ -38,6 +36,9 @@
 #define MTP_CONTAINER_TRANSACTION_ID_OFFSET     8
 #define MTP_CONTAINER_PARAMETER_OFFSET          12
 #define MTP_CONTAINER_HEADER_SIZE               12
+
+// Maximum buffer size for a MTP packet.
+#define MTP_BUFFER_SIZE 16384
 
 // MTP Data Types
 #define MTP_TYPE_UNDEFINED      0x0000          // Undefined
@@ -92,6 +93,8 @@
 #define MTP_FORMAT_TIFF_IT                              0x380E   // Tag Image File Format for Information Technology (graphic arts)
 #define MTP_FORMAT_JP2                                  0x380F   // JPEG2000 Baseline File Format
 #define MTP_FORMAT_JPX                                  0x3810   // JPEG2000 Extended File Format
+#define MTP_FORMAT_DNG                                  0x3811   // Digital Negative
+#define MTP_FORMAT_HEIF                                 0x3812   // HEIF images
 #define MTP_FORMAT_UNDEFINED_FIRMWARE                   0xB802
 #define MTP_FORMAT_WINDOWS_IMAGE_FORMAT                 0xB881
 #define MTP_FORMAT_UNDEFINED_AUDIO                      0xB900
@@ -451,46 +454,6 @@
 #define MTP_RESPONSE_OBJECT_TOO_LARGE                           0xA809
 #define MTP_RESPONSE_OBJECT_PROP_NOT_SUPPORTED                  0xA80A
 
-// MTP Event Codes
-#define MTP_EVENT_UNDEFINED                         0x4000
-#define MTP_EVENT_CANCEL_TRANSACTION                0x4001
-#define MTP_EVENT_OBJECT_ADDED                      0x4002
-#define MTP_EVENT_OBJECT_REMOVED                    0x4003
-#define MTP_EVENT_STORE_ADDED                       0x4004
-#define MTP_EVENT_STORE_REMOVED                     0x4005
-#define MTP_EVENT_DEVICE_PROP_CHANGED               0x4006
-#define MTP_EVENT_OBJECT_INFO_CHANGED               0x4007
-#define MTP_EVENT_DEVICE_INFO_CHANGED               0x4008
-#define MTP_EVENT_REQUEST_OBJECT_TRANSFER           0x4009
-#define MTP_EVENT_STORE_FULL                        0x400A
-#define MTP_EVENT_DEVICE_RESET                      0x400B
-#define MTP_EVENT_STORAGE_INFO_CHANGED              0x400C
-#define MTP_EVENT_CAPTURE_COMPLETE                  0x400D
-#define MTP_EVENT_UNREPORTED_STATUS                 0x400E
-#define MTP_EVENT_OBJECT_PROP_CHANGED               0xC801
-#define MTP_EVENT_OBJECT_PROP_DESC_CHANGED          0xC802
-#define MTP_EVENT_OBJECT_REFERENCES_CHANGED         0xC803
-
-// Storage Type
-#define MTP_STORAGE_FIXED_ROM                       0x0001
-#define MTP_STORAGE_REMOVABLE_ROM                   0x0002
-#define MTP_STORAGE_FIXED_RAM                       0x0003
-#define MTP_STORAGE_REMOVABLE_RAM                   0x0004
-
-// Storage File System
-#define MTP_STORAGE_FILESYSTEM_FLAT                 0x0001
-#define MTP_STORAGE_FILESYSTEM_HIERARCHICAL         0x0002
-#define MTP_STORAGE_FILESYSTEM_DCF                  0x0003
-
-// Storage Access Capability
-#define MTP_STORAGE_READ_WRITE                      0x0000
-#define MTP_STORAGE_READ_ONLY_WITHOUT_DELETE        0x0001
-#define MTP_STORAGE_READ_ONLY_WITH_DELETE           0x0002
-
-// Association Type
-#define MTP_ASSOCIATION_TYPE_UNDEFINED              0x0000
-#define MTP_ASSOCIATION_TYPE_GENERIC_FOLDER         0x0001
-
 // Supported Playback Formats
 #define SUPPORTED_PLAYBACK_FORMAT_UNDEFINED 0x3000
 /** Format code for associations (folders and directories) */
@@ -603,5 +566,51 @@
 #define SUPPORTED_PLAYBACK_FORMAT_MS_EXCEL_SPREADSHEET 0xBA85
 /** Format code for MS PowerPoint presentatiosn */
 #define SUPPORTED_PLAYBACK_FORMAT_MS_POWERPOINT_PRESENTATION 0xBA86
+
+// MTP Event Codes
+#define MTP_EVENT_UNDEFINED                         0x4000
+#define MTP_EVENT_CANCEL_TRANSACTION                0x4001
+#define MTP_EVENT_OBJECT_ADDED                      0x4002
+#define MTP_EVENT_OBJECT_REMOVED                    0x4003
+#define MTP_EVENT_STORE_ADDED                       0x4004
+#define MTP_EVENT_STORE_REMOVED                     0x4005
+#define MTP_EVENT_DEVICE_PROP_CHANGED               0x4006
+#define MTP_EVENT_OBJECT_INFO_CHANGED               0x4007
+#define MTP_EVENT_DEVICE_INFO_CHANGED               0x4008
+#define MTP_EVENT_REQUEST_OBJECT_TRANSFER           0x4009
+#define MTP_EVENT_STORE_FULL                        0x400A
+#define MTP_EVENT_DEVICE_RESET                      0x400B
+#define MTP_EVENT_STORAGE_INFO_CHANGED              0x400C
+#define MTP_EVENT_CAPTURE_COMPLETE                  0x400D
+#define MTP_EVENT_UNREPORTED_STATUS                 0x400E
+#define MTP_EVENT_OBJECT_PROP_CHANGED               0xC801
+#define MTP_EVENT_OBJECT_PROP_DESC_CHANGED          0xC802
+#define MTP_EVENT_OBJECT_REFERENCES_CHANGED         0xC803
+
+// Storage Type
+#define MTP_STORAGE_FIXED_ROM                       0x0001
+#define MTP_STORAGE_REMOVABLE_ROM                   0x0002
+#define MTP_STORAGE_FIXED_RAM                       0x0003
+#define MTP_STORAGE_REMOVABLE_RAM                   0x0004
+
+// Storage File System
+#define MTP_STORAGE_FILESYSTEM_FLAT                 0x0001
+#define MTP_STORAGE_FILESYSTEM_HIERARCHICAL         0x0002
+#define MTP_STORAGE_FILESYSTEM_DCF                  0x0003
+
+// Storage Access Capability
+#define MTP_STORAGE_READ_WRITE                      0x0000
+#define MTP_STORAGE_READ_ONLY_WITHOUT_DELETE        0x0001
+#define MTP_STORAGE_READ_ONLY_WITH_DELETE           0x0002
+
+// Association Type
+#define MTP_ASSOCIATION_TYPE_UNDEFINED              0x0000
+#define MTP_ASSOCIATION_TYPE_GENERIC_FOLDER         0x0001
+
+// MTP class reqeusts
+#define MTP_REQ_CANCEL              0x64
+#define MTP_REQ_GET_EXT_EVENT_DATA  0x65
+#define MTP_REQ_RESET               0x66
+#define MTP_REQ_GET_DEVICE_STATUS   0x67
 
 #endif // _MTP_H

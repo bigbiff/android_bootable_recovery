@@ -21,6 +21,7 @@
 
 #include "mtp.h"
 #include "MtpObjectInfo.h"
+#include "MtpServer.h"
 #include <string>
 #include <deque>
 #include <map>
@@ -31,6 +32,7 @@
 #include "../tw_atomic.hpp"
 
 class MtpDatabase;
+class MtpServer;
 struct inotify_event;
 
 class MtpStorage {
@@ -44,7 +46,7 @@ private:
     // amount of free space to leave unallocated
     uint64_t                mReserveSpace;
     bool                    mRemovable;
-	MtpServer*				mServer;
+    MtpServer*              mServer;
     typedef std::map<int, Tree*> maptree;
     typedef maptree::iterator iter;
     maptree mtpmap;

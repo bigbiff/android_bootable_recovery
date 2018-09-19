@@ -12,37 +12,37 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (C) 2014 TeamWin - bigbiff and Dees_Troy mtp database conversion to C++
  */
 
 #ifndef _MTP_PACKET_H
 #define _MTP_PACKET_H
 
+#include "android-base/macros.h"
+
 #include "MtpTypes.h"
 
+struct usb_device;
 struct usb_request;
-
 
 class MtpPacket {
 
 protected:
     uint8_t*            mBuffer;
     // current size of the buffer
-    int                 mBufferSize;
+    size_t              mBufferSize;
     // number of bytes to add when resizing the buffer
-    int                 mAllocationIncrement;
+    size_t              mAllocationIncrement;
     // size of the data in the packet
-    unsigned            mPacketSize;
+    size_t              mPacketSize;
 
 public:
-                        MtpPacket(int bufferSize);
+    explicit            MtpPacket(int bufferSize);
     virtual             ~MtpPacket();
 
     // sets packet size to the default container size and sets buffer to zero
     virtual void        reset();
 
-    void                allocate(int length);
+    void                allocate(size_t length);
     void                dump();
     void                copyFrom(const MtpPacket& src);
 
@@ -66,7 +66,8 @@ protected:
     uint32_t            getUInt32(int offset) const;
     void                putUInt16(int offset, uint16_t value);
     void                putUInt32(int offset, uint32_t value);
-};
 
+    DISALLOW_COPY_AND_ASSIGN(MtpPacket);
+};
 
 #endif // _MTP_PACKET_H

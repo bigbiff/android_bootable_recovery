@@ -12,23 +12,23 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (C) 2014 TeamWin - bigbiff and Dees_Troy mtp database conversion to C++
  */
 
 #ifndef _MTP_SERVER_H
 #define _MTP_SERVER_H
 
-#include <utils/threads.h>
-#include <utils/Vector.h>
 #include "MtpRequestPacket.h"
-#include "MtpDatabase.h"
 #include "MtpDataPacket.h"
 #include "MtpResponsePacket.h"
 #include "MtpEventPacket.h"
 #include "mtp.h"
 #include "MtpUtils.h"
+#include "IMtpHandle.h"
 
+#include <utils/threads.h>
+#include <queue>
+#include <memory>
+#include <mutex>
 
 class MtpDatabase;
 class MtpStorage;
@@ -36,9 +36,6 @@ class MtpStorage;
 class MtpServer {
 
 private:
-    // file descriptor for MTP kernel driver
-    int                 mFD;
-	android::Mutex                   mMutex;
     MtpDatabase*        mDatabase;
 
     // appear as a PTP device
@@ -50,6 +47,15 @@ private:
     int                 mFilePermission;
     int                 mDirectoryPermission;
 
+    // Manufacturer to report in DeviceInfo
+    MtpString           mDeviceInfoManufacturer;
+    // Model to report in DeviceInfo
+    MtpString           mDeviceInfoModel;
+    // Device version to report in DeviceInfo
+    MtpString           mDeviceInfoDeviceVersion;
+    // Serial number to report in DeviceInfo
+    MtpString           mDeviceInfoSerialNumber;
+
     // current session ID
     MtpSessionID        mSessionID;
     // true if we have an open session and mSessionID is valid
@@ -58,9 +64,12 @@ private:
     MtpRequestPacket    mRequest;
     MtpDataPacket       mData;
     MtpResponsePacket   mResponse;
+
     MtpEventPacket      mEvent;
 
     MtpStorageList      mStorages;
+
+    static IMtpHandle*  sHandle;
 
     // handle for new object, set by SendObjectInfo and used by SendObject
     MtpObjectHandle     mSendObjectHandle;
@@ -68,7 +77,7 @@ private:
     MtpString           mSendObjectFilePath;
     size_t              mSendObjectFileSize;
 
-	pthread_mutex_t mtpMutex;
+    android::Mutex               mMutex;
 
     // represents an MTP object that is being edited using the android extensions
     // for direct editing (BeginEditObject, SendPartialObject, TruncateObject and EndEditObject)
@@ -93,7 +102,11 @@ private:
 
 public:
                         MtpServer(MtpDatabase* database, bool ptp,
-                                    int fileGroup, int filePerm, int directoryPerm);
+                                    int fileGroup, int filePerm, int directoryPerm,
+                                    const MtpString& deviceInfoManufacturer,
+                                    const MtpString& deviceInfoModel,
+                                    const MtpString& deviceInfoDeviceVersion,
+                                    const MtpString& deviceInfoSerialNumber);
     virtual             ~MtpServer();
 
     MtpStorage*         getStorage(MtpStorageID id);
@@ -102,11 +115,13 @@ public:
     void                addStorage(MtpStorage* storage);
     void                removeStorage(MtpStorage* storage);
 
-    void                run(int fd);
+    static int          configure(bool usePtp);
+    void                run();
 
     void                sendObjectAdded(MtpObjectHandle handle);
     void                sendObjectRemoved(MtpObjectHandle handle);
     void                sendObjectUpdated(MtpObjectHandle handle);
+    void                sendDevicePropertyChanged(MtpDeviceProperty property);
 
 private:
     void                sendStoreAdded(MtpStorageID id);
@@ -150,6 +165,8 @@ private:
     MtpResponseCode     doTruncateObject();
     MtpResponseCode     doBeginEditObject();
     MtpResponseCode     doEndEditObject();
+
+    bool                SetProperty(const std::string& key, const std::string& value);
 };
 
 #endif // _MTP_SERVER_H

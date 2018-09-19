@@ -12,15 +12,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (C) 2014 TeamWin - bigbiff and Dees_Troy mtp database conversion to C++
  */
 
 #ifndef _MTP_PROPERTY_H
 #define _MTP_PROPERTY_H
 
 #include "MtpTypes.h"
-
 
 class MtpDataPacket;
 
@@ -50,9 +47,9 @@ public:
     MtpPropertyValue    mCurrentValue;
 
     // for array types
-    int                 mDefaultArrayLength;
+    uint32_t            mDefaultArrayLength;
     MtpPropertyValue*   mDefaultArrayValues;
-    int                 mCurrentArrayLength;
+    uint32_t            mCurrentArrayLength;
     MtpPropertyValue*   mCurrentArrayValues;
 
     enum {
@@ -71,7 +68,7 @@ public:
     MtpPropertyValue    mStepSize;
 
     // for enum form
-    int                 mEnumLength;
+    uint16_t            mEnumLength;
     MtpPropertyValue*   mEnumValues;
 
 public:
@@ -82,13 +79,16 @@ public:
                                      int defaultValue = 0);
     virtual             ~MtpProperty();
 
-    inline MtpPropertyCode getPropertyCode() const { return mCode; }
+    MtpPropertyCode getPropertyCode() const { return mCode; }
+    MtpDataType getDataType() const { return mType; }
 
-    void                read(MtpDataPacket& packet);
+    bool                read(MtpDataPacket& packet);
     void                write(MtpDataPacket& packet);
 
     void                setDefaultValue(const uint16_t* string);
     void                setCurrentValue(const uint16_t* string);
+    void                setCurrentValue(MtpDataPacket& packet);
+    const MtpPropertyValue& getCurrentValue() { return mCurrentValue; }
 
     void                setFormRange(int min, int max, int step);
     void                setFormEnum(const int* values, int count);
@@ -103,12 +103,11 @@ public:
                         }
 
 private:
-    void                readValue(MtpDataPacket& packet, MtpPropertyValue& value);
+    bool                readValue(MtpDataPacket& packet, MtpPropertyValue& value);
     void                writeValue(MtpDataPacket& packet, MtpPropertyValue& value);
-    MtpPropertyValue*   readArrayValues(MtpDataPacket& packet, int& length);
+    MtpPropertyValue*   readArrayValues(MtpDataPacket& packet, uint32_t& length);
     void                writeArrayValues(MtpDataPacket& packet,
-                                            MtpPropertyValue* values, int length);
+                                            MtpPropertyValue* values, uint32_t length);
 };
-
 
 #endif // _MTP_PROPERTY_H

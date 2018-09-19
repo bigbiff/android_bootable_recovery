@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (C) 2014 TeamWin - bigbiff and Dees_Troy mtp database conversion to C++
  */
 
 #ifndef _MTP_EVENT_PACKET_H
@@ -22,6 +20,8 @@
 #include "MtpPacket.h"
 #include "mtp.h"
 
+class IMtpHandle;
+
 class MtpEventPacket : public MtpPacket {
 
 public:
@@ -29,13 +29,14 @@ public:
     virtual             ~MtpEventPacket();
 
 #ifdef MTP_DEVICE
-    // write our data to the given file descriptor
-    int                 write(int fd);
+    // write our data to the given usb handle
+    int                 write(IMtpHandle *h);
 #endif
 
 #ifdef MTP_HOST
     // read our buffer with the given request
-    int                 read(struct usb_request *request);
+    int                 sendRequest(struct usb_request *request);
+    int                 readResponse(struct usb_device *device);
 #endif
 
     inline MtpEventCode     getEventCode() const { return getContainerCode(); }

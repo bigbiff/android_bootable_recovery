@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (C) 2014 TeamWin - bigbiff and Dees_Troy mtp database conversion to c++
  */
 
 #ifndef _MTP_DATABASE_H
@@ -60,8 +58,7 @@ public:
     virtual MtpObjectPropertyList*  getSupportedObjectProperties(MtpObjectFormat format) = 0;
     virtual MtpDevicePropertyList*  getSupportedDeviceProperties() = 0;
 
-	virtual void 					createDB(MtpStorage* storage, MtpStorageID storageID) = 0;
-	virtual void 					destroyDB(MtpStorageID storageID) = 0;
+    virtual void                    createDB(MtpStorage* storage, MtpStorageID storageID) = 0;
 
     virtual MtpResponseCode         getObjectPropertyValue(MtpObjectHandle handle,
                                             MtpObjectProperty property,
@@ -109,8 +106,6 @@ public:
     virtual void                    sessionStarted() = 0;
 
     virtual void                    sessionEnded() = 0;
-    virtual void                    lockMutex() = 0;
-    virtual void                    unlockMutex() = 0;
 };
 
 #endif // _MTP_DATABASE_H

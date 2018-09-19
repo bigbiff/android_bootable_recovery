@@ -12,8 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (C) 2014 TeamWin - bigbiff and Dees_Troy mtp database conversion to C++
  */
 
 #ifndef _MTP_RESPONSE_PACKET_H
@@ -22,6 +20,7 @@
 #include "MtpPacket.h"
 #include "mtp.h"
 
+class IMtpHandle;
 
 class MtpResponsePacket : public MtpPacket {
 
@@ -30,8 +29,8 @@ public:
     virtual             ~MtpResponsePacket();
 
 #ifdef MTP_DEVICE
-    // write our data to the given file descriptor
-    int                 write(int fd);
+    // write our data to the given usb handle
+    int                 write(IMtpHandle *h);
 #endif
 
 #ifdef MTP_HOST
@@ -43,6 +42,5 @@ public:
     inline void                 setResponseCode(MtpResponseCode code)
                                                      { return setContainerCode(code); }
 };
-
 
 #endif // _MTP_RESPONSE_PACKET_H
