@@ -65,10 +65,10 @@ bool MtpStorageInfo::read(MtpDataPacket& packet) {
 }
 
 void MtpStorageInfo::print() {
-    ALOGD("Storage Info %08X:\n\tmStorageType: %d\n\tmFileSystemType: %d\n\tmAccessCapability: %d\n",
+    MTPD("Storage Info %08X:\n\tmStorageType: %d\n\tmFileSystemType: %d\n\tmAccessCapability: %d\n",
             mStorageID, mStorageType, mFileSystemType, mAccessCapability);
-    ALOGD("\tmMaxCapacity: %" PRIu64 "\n\tmFreeSpaceBytes: %" PRIu64 "\n\tmFreeSpaceObjects: %d\n",
+    MTPD("\tmMaxCapacity: %" PRIu64 "\n\tmFreeSpaceBytes: %" PRIu64 "\n\tmFreeSpaceObjects: %d\n",
             mMaxCapacity, mFreeSpaceBytes, mFreeSpaceObjects);
-    ALOGD("\tmStorageDescription: %s\n\tmVolumeIdentifier: %s\n",
+    MTPD("\tmStorageDescription: %s\n\tmVolumeIdentifier: %s\n",
             mStorageDescription, mVolumeIdentifier);
 }

@@ -18,8 +18,7 @@
 #define _MTP_TYPES_H
 
 #include <stdint.h>
-#include "utils/String8.h"
-#include "utils/Vector.h"
+#include <vector>
 
 typedef int32_t int128_t[4];
 typedef uint32_t uint128_t[4];
@@ -49,18 +48,18 @@ class MtpStorage;
 class MtpDevice;
 class MtpProperty;
 
-typedef android::Vector<MtpStorage *> MtpStorageList;
-typedef android::Vector<MtpDevice*> MtpDeviceList;
-typedef android::Vector<MtpProperty*> MtpPropertyList;
+typedef std::vector<MtpStorage *> MtpStorageList;
+typedef std::vector<MtpDevice*> MtpDeviceList;
+typedef std::vector<MtpProperty*> MtpPropertyList;
 
-typedef android::Vector<uint8_t> UInt8List;
-typedef android::Vector<uint16_t> UInt16List;
-typedef android::Vector<uint32_t> UInt32List;
-typedef android::Vector<uint64_t> UInt64List;
-typedef android::Vector<int8_t> Int8List;
-typedef android::Vector<int16_t> Int16List;
-typedef android::Vector<int32_t> Int32List;
-typedef android::Vector<int64_t> Int64List;
+typedef std::vector<uint8_t> UInt8List;
+typedef std::vector<uint16_t> UInt16List;
+typedef std::vector<uint32_t> UInt32List;
+typedef std::vector<uint64_t> UInt64List;
+typedef std::vector<int8_t> Int8List;
+typedef std::vector<int16_t> Int16List;
+typedef std::vector<int32_t> Int32List;
+typedef std::vector<int64_t> Int64List;
 
 typedef UInt16List MtpObjectPropertyList;
 typedef UInt16List MtpDevicePropertyList;
@@ -68,8 +67,6 @@ typedef UInt16List MtpObjectFormatList;
 typedef UInt32List MtpObjectHandleList;
 typedef UInt16List MtpObjectPropertyList;
 typedef UInt32List MtpStorageIDList;
-
-typedef android::String8    MtpString;
 
 enum UrbPacketDivisionMode {
     // First packet only contains a header.

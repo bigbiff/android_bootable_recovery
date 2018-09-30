@@ -17,6 +17,7 @@
 #include "MtpDebug.h"
 
 #define MTP_DEBUG_BUFFER_SIZE 2048
+
 static int debug_enabled = 0;
 
 extern "C" void mtpdebug(const char *fmt, ...)
@@ -417,6 +418,7 @@ const char* MtpDebug::getDevicePropCodeName(MtpPropertyCode code) {
 }
 
 void MtpDebug::enableDebug(void) {
-        debug_enabled = 1;
-        MTPD("MTP debug logging enabled\n");
+    debug_enabled = 1;
+    MTPD("MTP debug logging enabled\n");
 }
+

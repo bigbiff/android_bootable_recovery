@@ -34,7 +34,7 @@ MtpPacket::MtpPacket(int bufferSize)
 {
     mBuffer = (uint8_t *)malloc(bufferSize);
     if (!mBuffer) {
-        ALOGE("out of memory!");
+        MTPE("out of memory!");
         abort();
     }
 }
@@ -55,7 +55,7 @@ void MtpPacket::allocate(size_t length) {
         int newLength = length + mAllocationIncrement;
         mBuffer = (uint8_t *)realloc(mBuffer, newLength);
         if (!mBuffer) {
-            ALOGE("out of memory!");
+            MTPE("out of memory!");
             abort();
         }
         mBufferSize = newLength;
@@ -132,7 +132,7 @@ void MtpPacket::setTransactionID(MtpTransactionID id) {
 
 uint32_t MtpPacket::getParameter(int index) const {
     if (index < 1 || index > 5) {
-        ALOGE("index %d out of range in MtpPacket::getParameter", index);
+        MTPE("index %d out of range in MtpPacket::getParameter", index);
         return 0;
     }
     return getUInt32(MTP_CONTAINER_PARAMETER_OFFSET + (index - 1) * sizeof(uint32_t));
@@ -140,7 +140,7 @@ uint32_t MtpPacket::getParameter(int index) const {
 
 void MtpPacket::setParameter(int index, uint32_t value) {
     if (index < 1 || index > 5) {
-        ALOGE("index %d out of range in MtpPacket::setParameter", index);
+        MTPE("index %d out of range in MtpPacket::setParameter", index);
         return;
     }
     int offset = MTP_CONTAINER_PARAMETER_OFFSET + (index - 1) * sizeof(uint32_t);

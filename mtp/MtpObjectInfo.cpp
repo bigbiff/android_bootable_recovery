@@ -93,16 +93,16 @@ bool MtpObjectInfo::read(MtpDataPacket& packet) {
 }
 
 void MtpObjectInfo::print() {
-    ALOGD("MtpObject Info %08X: %s\n", mHandle, mName);
-    ALOGD("  mStorageID: %08X mFormat: %04X mProtectionStatus: %d\n",
+    MTPD("MtpObject Info %08X: %s\n", mHandle, mName);
+    MTPD("  mStorageID: %08X mFormat: %04X mProtectionStatus: %d\n",
             mStorageID, mFormat, mProtectionStatus);
-    ALOGD("  mCompressedSize: %d mThumbFormat: %04X mThumbCompressedSize: %d\n",
+    MTPD("  mCompressedSize: %d mThumbFormat: %04X mThumbCompressedSize: %d\n",
             mCompressedSize, mFormat, mThumbCompressedSize);
-    ALOGD("  mThumbPixWidth: %d mThumbPixHeight: %d\n", mThumbPixWidth, mThumbPixHeight);
-    ALOGD("  mImagePixWidth: %d mImagePixHeight: %d mImagePixDepth: %d\n",
+    MTPD("  mThumbPixWidth: %d mThumbPixHeight: %d\n", mThumbPixWidth, mThumbPixHeight);
+    MTPD("  mImagePixWidth: %d mImagePixHeight: %d mImagePixDepth: %d\n",
             mImagePixWidth, mImagePixHeight, mImagePixDepth);
-    ALOGD("  mParent: %08X mAssociationType: %04X mAssociationDesc: %04X\n",
+    MTPD("  mParent: %08X mAssociationType: %04X mAssociationDesc: %04X\n",
             mParent, mAssociationType, mAssociationDesc);
-    ALOGD("  mSequenceNumber: %d mDateCreated: %ld mDateModified: %ld mKeywords: %s\n",
+    MTPD("  mSequenceNumber: %d mDateCreated: %ld mDateModified: %ld mKeywords: %s\n",
             mSequenceNumber, mDateCreated, mDateModified, mKeywords);
 }

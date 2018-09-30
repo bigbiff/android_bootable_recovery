@@ -42,10 +42,10 @@ typedef struct Storage {
 typedef std::vector<storage*> storages;
 
 struct mtp_info {
-	MtpString deviceInfoManufacturer;
-	MtpString deviceInfoModel;
-	MtpString deviceInfoDeviceVersion;
-	MtpString deviceInfoSerialNumber;
+	MtpStringBuffer deviceInfoManufacturer;
+	MtpStringBuffer deviceInfoModel;
+	MtpStringBuffer deviceInfoDeviceVersion;
+	MtpStringBuffer deviceInfoSerialNumber;
 };
 
 class twmtp_MtpServer {
@@ -70,9 +70,9 @@ class twmtp_MtpServer {
 		MtpServer* server;
 		MtpServer* refserver;
 		int mtp_read_pipe;
-                MtpString deviceInfoManufacturer;
-                MtpString deviceInfoModel;
-                MtpString deviceInfoDeviceVersion;
-                MtpString deviceInfoSerialNumber;
+                MtpStringBuffer deviceInfoManufacturer;
+                MtpStringBuffer deviceInfoModel;
+                MtpStringBuffer deviceInfoDeviceVersion;
+                MtpStringBuffer deviceInfoSerialNumber;
 };
 #endif

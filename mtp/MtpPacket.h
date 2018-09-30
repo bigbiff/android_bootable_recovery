@@ -17,8 +17,9 @@
 #ifndef _MTP_PACKET_H
 #define _MTP_PACKET_H
 
-#include "android-base/macros.h"
+#include <android-base/macros.h>
 
+#include "MtpDebug.h"
 #include "MtpTypes.h"
 
 struct usb_device;

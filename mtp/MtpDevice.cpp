@@ -35,9 +35,13 @@
 #include <errno.h>
 #include <endian.h>
 
-#include "twrpusbhost/usbhost.h"
+#include <usbhost/usbhost.h>
+
+namespace {
 
 static constexpr int USB_CONTROL_TRANSFER_TIMEOUT_MS = 200;
+
+}  // namespace
 
 #if 0
 static bool isMtpDevice(uint16_t vendor, uint16_t product) {
@@ -51,6 +55,8 @@ static bool isMtpDevice(uint16_t vendor, uint16_t product) {
 }
 #endif
 
+namespace {
+
 bool writeToFd(void* data, uint32_t /* unused_offset */, uint32_t length, void* clientData) {
     const int fd = *static_cast<int*>(clientData);
     const ssize_t result = write(fd, data, length);
@@ -60,10 +66,12 @@ bool writeToFd(void* data, uint32_t /* unused_offset */, uint32_t length, void* 
     return static_cast<uint32_t>(result) == length;
 }
 
+}  // namespace
+
 MtpDevice* MtpDevice::open(const char* deviceName, int fd) {
     struct usb_device *device = usb_device_new(deviceName, fd);
     if (!device) {
-        ALOGE("usb_device_new failed for %s", deviceName);
+        MTPE("usb_device_new failed for %s", deviceName);
         return NULL;
     }
 
@@ -84,7 +92,7 @@ MtpDevice* MtpDevice::open(const char* deviceName, int fd) {
                         USB_CONTROL_TRANSFER_TIMEOUT_MS);
                 char* productName = usb_device_get_product_name(device,
                         USB_CONTROL_TRANSFER_TIMEOUT_MS);
-                ALOGD("Found camera: \"%s\" \"%s\"\n", manufacturerName, productName);
+                MTPD("Found camera: \"%s\" \"%s\"\n", manufacturerName, productName);
                 free(manufacturerName);
                 free(productName);
             } else if (interface->bInterfaceClass == 0xFF &&
@@ -105,7 +113,7 @@ MtpDevice* MtpDevice::open(const char* deviceName, int fd) {
                         USB_CONTROL_TRANSFER_TIMEOUT_MS);
                 char* productName = usb_device_get_product_name(device,
                         USB_CONTROL_TRANSFER_TIMEOUT_MS);
-                ALOGD("Found MTP device: \"%s\" \"%s\"\n", manufacturerName, productName);
+                MTPD("Found MTP device: \"%s\" \"%s\"\n", manufacturerName, productName);
                 free(manufacturerName);
                 free(productName);
             }
@@ -155,13 +163,13 @@ MtpDevice* MtpDevice::open(const char* deviceName, int fd) {
             for (int i = 0; i < 3; i++) {
                 ep = (struct usb_endpoint_descriptor *)usb_descriptor_iter_next(&iter);
                 if (ep && ep->bDescriptorType == USB_DT_SS_ENDPOINT_COMP) {
-                    ALOGD("Descriptor type is USB_DT_SS_ENDPOINT_COMP for USB3 \n");
+                    MTPD("Descriptor type is USB_DT_SS_ENDPOINT_COMP for USB3 \n");
                     ep_ss_ep_comp_desc = (usb_ss_ep_comp_descriptor*)ep;
                     ep = (struct usb_endpoint_descriptor *)usb_descriptor_iter_next(&iter);
                  }
 
                 if (!ep || ep->bDescriptorType != USB_DT_ENDPOINT) {
-                    ALOGE("endpoints not found\n");
+                    MTPE("endpoints not found\n");
                     usb_device_close(device);
                     return NULL;
                 }
@@ -177,7 +185,7 @@ MtpDevice* MtpDevice::open(const char* deviceName, int fd) {
                 }
             }
             if (!ep_in_desc || !ep_out_desc || !ep_intr_desc) {
-                ALOGE("endpoints not found\n");
+                MTPE("endpoints not found\n");
                 usb_device_close(device);
                 return NULL;
             }
@@ -189,7 +197,7 @@ MtpDevice* MtpDevice::open(const char* deviceName, int fd) {
                 ret = usb_device_claim_interface(device, interface->bInterfaceNumber);
             }
             if (ret) {
-                ALOGE("usb_device_claim_interface failed errno: %d\n", errno);
+                MTPE("usb_device_claim_interface failed errno: %d\n", errno);
                 usb_device_close(device);
                 return NULL;
             }
@@ -202,7 +210,7 @@ MtpDevice* MtpDevice::open(const char* deviceName, int fd) {
     }
 
     usb_device_close(device);
-    ALOGE("device not found");
+    MTPE("device not found");
     return NULL;
 }
 
@@ -252,7 +260,7 @@ void MtpDevice::initialize() {
                 MtpDeviceProperty propCode = (*mDeviceInfo->mDeviceProperties)[i];
                 MtpProperty* property = getDevicePropDesc(propCode);
                 if (property)
-                    mDeviceProperties.push(property);
+                    mDeviceProperties.push_back(property);
             }
         }
     }
@@ -273,7 +281,7 @@ void MtpDevice::print() {
     mDeviceInfo->print();
 
     if (mDeviceInfo->mDeviceProperties) {
-        ALOGI("***** DEVICE PROPERTIES *****\n");
+        MTPD("***** DEVICE PROPERTIES *****\n");
         int count = mDeviceInfo->mDeviceProperties->size();
         for (int i = 0; i < count; i++) {
             MtpDeviceProperty propCode = (*mDeviceInfo->mDeviceProperties)[i];
@@ -286,11 +294,11 @@ void MtpDevice::print() {
     }
 
     if (mDeviceInfo->mPlaybackFormats) {
-            ALOGI("***** OBJECT PROPERTIES *****\n");
+            MTPD("***** OBJECT PROPERTIES *****\n");
         int count = mDeviceInfo->mPlaybackFormats->size();
         for (int i = 0; i < count; i++) {
             MtpObjectFormat format = (*mDeviceInfo->mPlaybackFormats)[i];
-            ALOGI("*** FORMAT: %s\n", MtpDebug::getFormatCodeName(format));
+            MTPD("*** FORMAT: %s\n", MtpDebug::getFormatCodeName(format));
             MtpObjectPropertyList* props = getObjectPropsSupported(format);
             if (props) {
                 for (size_t j = 0; j < props->size(); j++) {
@@ -300,7 +308,7 @@ void MtpDevice::print() {
                         property->print();
                         delete property;
                     } else {
-                        ALOGE("could not fetch property: %s",
+                        MTPE("could not fetch property: %s",
                                 MtpDebug::getObjectPropCodeName(prop));
                     }
                 }
@@ -317,7 +325,7 @@ const char* MtpDevice::getDeviceName() {
 }
 
 bool MtpDevice::openSession() {
-    android::Mutex::Autolock autoLock(mMutex);
+    std::lock_guard<std::mutex> lg(mMutex);
 
     mSessionID = 0;
     mTransactionID = 0;
@@ -343,7 +351,7 @@ bool MtpDevice::closeSession() {
 }
 
 MtpDeviceInfo* MtpDevice::getDeviceInfo() {
-    android::Mutex::Autolock autoLock(mMutex);
+    std::lock_guard<std::mutex> lg(mMutex);
 
     mRequest.reset();
     if (!sendRequest(MTP_OPERATION_GET_DEVICE_INFO))
@@ -362,7 +370,7 @@ MtpDeviceInfo* MtpDevice::getDeviceInfo() {
 }
 
 MtpStorageIDList* MtpDevice::getStorageIDs() {
-    android::Mutex::Autolock autoLock(mMutex);
+    std::lock_guard<std::mutex> lg(mMutex);
 
     mRequest.reset();
     if (!sendRequest(MTP_OPERATION_GET_STORAGE_IDS))
@@ -377,7 +385,7 @@ MtpStorageIDList* MtpDevice::getStorageIDs() {
 }
 
 MtpStorageInfo* MtpDevice::getStorageInfo(MtpStorageID storageID) {
-    android::Mutex::Autolock autoLock(mMutex);
+    std::lock_guard<std::mutex> lg(mMutex);
 
     mRequest.reset();
     mRequest.setParameter(1, storageID);
@@ -398,7 +406,7 @@ MtpStorageInfo* MtpDevice::getStorageInfo(MtpStorageID storageID) {
 
 MtpObjectHandleList* MtpDevice::getObjectHandles(MtpStorageID storageID,
             MtpObjectFormat format, MtpObjectHandle parent) {
-    android::Mutex::Autolock autoLock(mMutex);
+    std::lock_guard<std::mutex> lg(mMutex);
 
     mRequest.reset();
     mRequest.setParameter(1, storageID);
@@ -416,7 +424,7 @@ MtpObjectHandleList* MtpDevice::getObjectHandles(MtpStorageID storageID,
 }
 
 MtpObjectInfo* MtpDevice::getObjectInfo(MtpObjectHandle handle) {
-    android::Mutex::Autolock autoLock(mMutex);
+    std::lock_guard<std::mutex> lg(mMutex);
 
     // FIXME - we might want to add some caching here
 
@@ -438,7 +446,7 @@ MtpObjectInfo* MtpDevice::getObjectInfo(MtpObjectHandle handle) {
 }
 
 void* MtpDevice::getThumbnail(MtpObjectHandle handle, int& outLength) {
-    android::Mutex::Autolock autoLock(mMutex);
+    std::lock_guard<std::mutex> lg(mMutex);
 
     mRequest.reset();
     mRequest.setParameter(1, handle);
@@ -453,7 +461,7 @@ void* MtpDevice::getThumbnail(MtpObjectHandle handle, int& outLength) {
 }
 
 MtpObjectHandle MtpDevice::sendObjectInfo(MtpObjectInfo* info) {
-    android::Mutex::Autolock autoLock(mMutex);
+    std::lock_guard<std::mutex> lg(mMutex);
 
     mRequest.reset();
     MtpObjectHandle parent = info->mParent;
@@ -507,11 +515,11 @@ MtpObjectHandle MtpDevice::sendObjectInfo(MtpObjectInfo* info) {
 }
 
 bool MtpDevice::sendObject(MtpObjectHandle handle, int size, int srcFD) {
-    android::Mutex::Autolock autoLock(mMutex);
+    std::lock_guard<std::mutex> lg(mMutex);
 
     if (mLastSendObjectInfoTransactionID + 1 != mTransactionID ||
             mLastSendObjectInfoObjectHandle != handle) {
-        ALOGE("A sendObject request must follow the sendObjectInfo request.");
+        MTPE("A sendObject request must follow the sendObjectInfo request.");
         return false;
     }
 
@@ -527,7 +535,7 @@ bool MtpDevice::sendObject(MtpObjectHandle handle, int size, int srcFD) {
 }
 
 bool MtpDevice::deleteObject(MtpObjectHandle handle) {
-    android::Mutex::Autolock autoLock(mMutex);
+    std::lock_guard<std::mutex> lg(mMutex);
 
     mRequest.reset();
     mRequest.setParameter(1, handle);
@@ -562,7 +570,7 @@ MtpObjectHandle MtpDevice::getStorageID(MtpObjectHandle handle) {
 }
 
 MtpObjectPropertyList* MtpDevice::getObjectPropsSupported(MtpObjectFormat format) {
-    android::Mutex::Autolock autoLock(mMutex);
+    std::lock_guard<std::mutex> lg(mMutex);
 
     mRequest.reset();
     mRequest.setParameter(1, format);
@@ -579,7 +587,7 @@ MtpObjectPropertyList* MtpDevice::getObjectPropsSupported(MtpObjectFormat format
 }
 
 MtpProperty* MtpDevice::getDevicePropDesc(MtpDeviceProperty code) {
-    android::Mutex::Autolock autoLock(mMutex);
+    std::lock_guard<std::mutex> lg(mMutex);
 
     mRequest.reset();
     mRequest.setParameter(1, code);
@@ -599,7 +607,7 @@ MtpProperty* MtpDevice::getDevicePropDesc(MtpDeviceProperty code) {
 }
 
 MtpProperty* MtpDevice::getObjectPropDesc(MtpObjectProperty code, MtpObjectFormat format) {
-    android::Mutex::Autolock autoLock(mMutex);
+    std::lock_guard<std::mutex> lg(mMutex);
 
     mRequest.reset();
     mRequest.setParameter(1, code);
@@ -623,7 +631,7 @@ bool MtpDevice::getObjectPropValue(MtpObjectHandle handle, MtpProperty* property
     if (property == nullptr)
         return false;
 
-    android::Mutex::Autolock autoLock(mMutex);
+    std::lock_guard<std::mutex> lg(mMutex);
 
     mRequest.reset();
     mRequest.setParameter(1, handle);
@@ -647,10 +655,10 @@ bool MtpDevice::readObject(MtpObjectHandle handle,
 
 // reads the object's data and writes it to the specified file path
 bool MtpDevice::readObject(MtpObjectHandle handle, const char* destPath, int group, int perm) {
-    ALOGD("readObject: %s", destPath);
+    MTPD("readObject: %s", destPath);
     int fd = ::open(destPath, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
     if (fd < 0) {
-        ALOGE("open failed for %s", destPath);
+        MTPE("open failed for %s", destPath);
         return false;
     }
 
@@ -666,7 +674,7 @@ bool MtpDevice::readObject(MtpObjectHandle handle, const char* destPath, int gro
 }
 
 bool MtpDevice::readObject(MtpObjectHandle handle, int fd) {
-    ALOGD("readObject: %d", fd);
+    MTPD("readObject: %d", fd);
     return readObjectInternal(handle, writeToFd, NULL /* expected size */, &fd);
 }
 
@@ -674,12 +682,12 @@ bool MtpDevice::readObjectInternal(MtpObjectHandle handle,
                                    ReadObjectCallback callback,
                                    const uint32_t* expectedLength,
                                    void* clientData) {
-    android::Mutex::Autolock autoLock(mMutex);
+    std::lock_guard<std::mutex> lg(mMutex);
 
     mRequest.reset();
     mRequest.setParameter(1, handle);
     if (!sendRequest(MTP_OPERATION_GET_OBJECT)) {
-        ALOGE("Failed to send a read request.");
+        MTPE("Failed to send a read request.");
         return false;
     }
 
@@ -691,7 +699,7 @@ bool MtpDevice::readData(ReadObjectCallback callback,
                             uint32_t* writtenSize,
                             void* clientData) {
     if (!mData.readDataHeader(mRequestIn1)) {
-        ALOGE("Failed to read header.");
+        MTPE("Failed to read header.");
         return false;
     }
 
@@ -704,12 +712,12 @@ bool MtpDevice::readData(ReadObjectCallback callback,
 
     const uint32_t fullLength = mData.getContainerLength();
     if (fullLength < MTP_CONTAINER_HEADER_SIZE) {
-        ALOGE("fullLength is too short: %d", fullLength);
+        MTPE("fullLength is too short: %d", fullLength);
         return false;
     }
     const uint32_t length = fullLength - MTP_CONTAINER_HEADER_SIZE;
     if (expectedLength && length != *expectedLength) {
-        ALOGE("readObject error length: %d", fullLength);
+        MTPE("readObject error length: %d", fullLength);
         return false;
     }
 
@@ -724,13 +732,13 @@ bool MtpDevice::readData(ReadObjectCallback callback,
             // data. a) The first packet contains the head and as much of the payload as possible
             // b) The first packet contains only the header. The initiator (MTP host) needs
             // to remember which way the responder used, and send upcoming data in the same way.
-            ALOGD("Found short packet that contains only a header.");
+            MTPD("Found short packet that contains only a header.");
             mPacketDivisionMode = FIRST_PACKET_ONLY_HEADER;
         }
         if (initialData) {
             if (initialDataLength > 0) {
                 if (!callback(initialData, offset, initialDataLength, clientData)) {
-                    ALOGE("Failed to write initial data.");
+                    MTPE("Failed to write initial data.");
                     writingError = true;
                 }
                 offset += initialDataLength;
@@ -752,7 +760,7 @@ bool MtpDevice::readData(ReadObjectCallback callback,
         if (req) {
             const int read = mData.readDataWait(mDevice);
             if (read < 0) {
-                ALOGE("readDataWait failed.");
+                MTPE("readDataWait failed.");
                 return false;
             }
             writeBuffer = req->buffer;
@@ -768,7 +776,7 @@ bool MtpDevice::readData(ReadObjectCallback callback,
             req->buffer_length = remaining > MTP_BUFFER_SIZE ?
                     static_cast<size_t>(MTP_BUFFER_SIZE) : remaining;
             if (mData.readDataAsync(req) != 0) {
-                ALOGE("readDataAsync failed");
+                MTPE("readDataAsync failed");
                 return false;
             }
         }
@@ -776,7 +784,7 @@ bool MtpDevice::readData(ReadObjectCallback callback,
         // Write previous buffer.
         if (writeBuffer && !writingError) {
             if (!callback(writeBuffer, offset, writeLength, clientData)) {
-                ALOGE("write failed");
+                MTPE("write failed");
                 writingError = true;
             }
         }
@@ -796,14 +804,14 @@ bool MtpDevice::readPartialObject(MtpObjectHandle handle,
                                   uint32_t *writtenSize,
                                   ReadObjectCallback callback,
                                   void* clientData) {
-    android::Mutex::Autolock autoLock(mMutex);
+    std::lock_guard<std::mutex> lg(mMutex);
 
     mRequest.reset();
     mRequest.setParameter(1, handle);
     mRequest.setParameter(2, offset);
     mRequest.setParameter(3, size);
     if (!sendRequest(MTP_OPERATION_GET_PARTIAL_OBJECT)) {
-        ALOGE("Failed to send a read request.");
+        MTPE("Failed to send a read request.");
         return false;
     }
     // The expected size is null because it requires the exact number of bytes to read though
@@ -818,7 +826,7 @@ bool MtpDevice::readPartialObject64(MtpObjectHandle handle,
                                     uint32_t *writtenSize,
                                     ReadObjectCallback callback,
                                     void* clientData) {
-    android::Mutex::Autolock autoLock(mMutex);
+    std::lock_guard<std::mutex> lg(mMutex);
 
     mRequest.reset();
     mRequest.setParameter(1, handle);
@@ -826,7 +834,7 @@ bool MtpDevice::readPartialObject64(MtpObjectHandle handle,
     mRequest.setParameter(3, 0xffffffff & (offset >> 32));
     mRequest.setParameter(4, size);
     if (!sendRequest(MTP_OPERATION_GET_PARTIAL_OBJECT_64)) {
-        ALOGE("Failed to send a read request.");
+        MTPE("Failed to send a read request.");
         return false;
     }
     // The expected size is null because it requires the exact number of bytes to read though
@@ -836,7 +844,7 @@ bool MtpDevice::readPartialObject64(MtpObjectHandle handle,
 }
 
 bool MtpDevice::sendRequest(MtpOperationCode operation) {
-    ALOGV("sendRequest: %s\n", MtpDebug::getOperationCodeName(operation));
+    MTPD("sendRequest: %s\n", MtpDebug::getOperationCodeName(operation));
     mReceivedResponse = false;
     mRequest.setOperationCode(operation);
     if (mTransactionID > 0)
@@ -847,7 +855,7 @@ bool MtpDevice::sendRequest(MtpOperationCode operation) {
 }
 
 bool MtpDevice::sendData() {
-    ALOGV("sendData\n");
+    MTPD("sendData\n");
     mData.setOperationCode(mRequest.getOperationCode());
     mData.setTransactionID(mRequest.getTransactionID());
     int ret = mData.write(mRequestOut, mPacketDivisionMode);
@@ -858,10 +866,10 @@ bool MtpDevice::sendData() {
 bool MtpDevice::readData() {
     mData.reset();
     int ret = mData.read(mRequestIn1);
-    ALOGV("readData returned %d\n", ret);
+    MTPD("readData returned %d\n", ret);
     if (ret >= MTP_CONTAINER_HEADER_SIZE) {
         if (mData.getContainerType() == MTP_CONTAINER_TYPE_RESPONSE) {
-            ALOGD("got response packet instead of data packet");
+            MTPD("got response packet instead of data packet");
             // we got a response packet rather than data
             // copy it to mResponse
             mResponse.copyFrom(mData);
@@ -872,13 +880,13 @@ bool MtpDevice::readData() {
         return true;
     }
     else {
-        ALOGV("readResponse failed\n");
+        MTPD("readResponse failed\n");
         return false;
     }
 }
 
 MtpResponseCode MtpDevice::readResponse() {
-    ALOGV("readResponse\n");
+    MTPD("readResponse\n");
     if (mReceivedResponse) {
         mReceivedResponse = false;
         return mResponse.getResponseCode();
@@ -892,13 +900,13 @@ MtpResponseCode MtpDevice::readResponse() {
         mResponse.dump();
         return mResponse.getResponseCode();
     } else {
-        ALOGD("readResponse failed\n");
+        MTPD("readResponse failed\n");
         return -1;
     }
 }
 
 int MtpDevice::submitEventRequest() {
-    if (mEventMutex.tryLock()) {
+    if (!mEventMutex.try_lock()) {
         // An event is being reaped on another thread.
         return -1;
     }
@@ -906,7 +914,7 @@ int MtpDevice::submitEventRequest() {
         // An event request was submitted, but no reapEventRequest called so far.
         return -1;
     }
-    android::Mutex::Autolock autoLock(mEventMutexForInterrupt);
+    std::lock_guard<std::mutex> lg(mEventMutexForInterrupt);
     mEventPacket.sendRequest(mRequestIntr);
     const int currentHandle = ++mCurrentEventHandle;
     mProcessingEvent = true;
@@ -915,7 +923,7 @@ int MtpDevice::submitEventRequest() {
 }
 
 int MtpDevice::reapEventRequest(int handle, uint32_t (*parameters)[3]) {
-    android::Mutex::Autolock autoLock(mEventMutex);
+    std::lock_guard<std::mutex> lg(mEventMutex);
     if (!mProcessingEvent || mCurrentEventHandle != handle || !parameters) {
         return -1;
     }
@@ -930,7 +938,7 @@ int MtpDevice::reapEventRequest(int handle, uint32_t (*parameters)[3]) {
 }
 
 void MtpDevice::discardEventRequest(int handle) {
-    android::Mutex::Autolock autoLock(mEventMutexForInterrupt);
+    std::lock_guard<std::mutex> lg(mEventMutexForInterrupt);
     if (mCurrentEventHandle != handle) {
         return;
     }

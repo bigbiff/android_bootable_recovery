@@ -18,6 +18,7 @@
 #define _MTP_DATABASE_H
 
 #include "MtpTypes.h"
+#include "MtpStringBuffer.h"
 
 class MtpDataPacket;
 class MtpProperty;
@@ -87,7 +88,7 @@ public:
     virtual void*                   getThumbnail(MtpObjectHandle handle, size_t& outThumbSize) = 0;
 
     virtual MtpResponseCode         getObjectFilePath(MtpObjectHandle handle,
-                                            MtpString& outFilePath,
+                                            MtpStringBuffer& outFilePath,
                                             int64_t& outFileLength,
                                             MtpObjectFormat& outFormat) = 0;
 

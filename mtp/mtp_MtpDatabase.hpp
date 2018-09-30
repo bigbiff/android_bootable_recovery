@@ -41,30 +41,30 @@
 #include "MtpUtils.h"
 #include "mtp.h"
 
-class MyMtpDatabase : public MtpDatabase {
+class IMtpDatabase : public MtpDatabase {
 private:
 	int* getSupportedObjectProperties(int format);
 
     static int FILE_PROPERTIES[10];
-	static int DEVICE_PROPERTIES[3];
+    static int DEVICE_PROPERTIES[3];
     static int AUDIO_PROPERTIES[19];
     static int VIDEO_PROPERTIES[15];
     static int IMAGE_PROPERTIES[12];
     static int ALL_PROPERTIES[25];
     static int SUPPORTED_PLAYBACK_FORMATS[26];
-	int storagenum;
-	int count;
-	std::string lastfile;
-	std::map<int, MtpStorage*> storagemap;
-	void countDirs(std::string path);
-	int readParentDirs(std::string path, int storageID);
+    int storagenum;
+    int count;
+    std::string lastfile;
+    std::map<int, MtpStorage*> storagemap;
+    void countDirs(std::string path);
+    int readParentDirs(std::string path, int storageID);
 
 public:
-                                    MyMtpDatabase();
-    virtual                         ~MyMtpDatabase();
+                                    IMtpDatabase();
+    virtual                         ~IMtpDatabase();
 
-	void					createDB(MtpStorage* storage, MtpStorageID storageID);
-	void					destroyDB(MtpStorageID storageID);
+    void		      	    createDB(MtpStorage* storage, MtpStorageID storageID);
+	void			    destroyDB(MtpStorageID storageID);
     virtual MtpObjectHandle         beginSendObject(const char* path,
                                             MtpObjectFormat format,
                                             MtpObjectHandle parent,
@@ -119,7 +119,7 @@ public:
     virtual void*                   getThumbnail(MtpObjectHandle handle, size_t& outThumbSize);
 
     virtual MtpResponseCode         getObjectFilePath(MtpObjectHandle handle,
-                                            MtpString& outFilePath,
+                                            MtpStringBuffer& outFilePath,
                                             int64_t& outFileLength,
                                             MtpObjectFormat& outFormat);
     virtual MtpResponseCode         deleteFile(MtpObjectHandle handle);

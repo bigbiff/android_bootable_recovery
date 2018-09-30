@@ -19,13 +19,16 @@
 #include "MtpDataPacket.h"
 
 #include <algorithm>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <sys/types.h>
-#include "twrpusbhost/usbhost.h"
+#include <usbhost/usbhost.h>
 #include "MtpStringBuffer.h"
 #include "IMtpHandle.h"
+#include "MtpDebug.h"
 
+namespace {
 // Reads the exact |count| bytes from |fd| to |buf|.
 // Returns |count| if it succeed to read the bytes. Otherwise returns -1. If it reaches EOF, the
 // function regards it as an error.
@@ -44,6 +47,7 @@ ssize_t readExactBytes(int fd, void* buf, size_t count) {
     }
     return read_count == count ? count : -1;
 }
+}  // namespace
 
 MtpDataPacket::MtpDataPacket()
     :   MtpPacket(MTP_BUFFER_SIZE),   // MAX_USBFS_BUFFER_SIZE
@@ -125,7 +129,7 @@ Int8List* MtpDataPacket::getAInt8() {
             delete result;
             return NULL;
         }
-        result->push(value);
+        result->push_back(value);
     }
     return result;
 }
@@ -141,7 +145,7 @@ UInt8List* MtpDataPacket::getAUInt8() {
             delete result;
             return NULL;
         }
-        result->push(value);
+        result->push_back(value);
     }
     return result;
 }
@@ -157,7 +161,7 @@ Int16List* MtpDataPacket::getAInt16() {
             delete result;
             return NULL;
         }
-        result->push(value);
+        result->push_back(value);
     }
     return result;
 }
@@ -173,7 +177,7 @@ UInt16List* MtpDataPacket::getAUInt16() {
             delete result;
             return NULL;
         }
-        result->push(value);
+        result->push_back(value);
     }
     return result;
 }
@@ -189,7 +193,7 @@ Int32List* MtpDataPacket::getAInt32() {
             delete result;
             return NULL;
         }
-        result->push(value);
+        result->push_back(value);
     }
     return result;
 }
@@ -205,7 +209,7 @@ UInt32List* MtpDataPacket::getAUInt32() {
             delete result;
             return NULL;
         }
-        result->push(value);
+        result->push_back(value);
     }
     return result;
 }
@@ -221,7 +225,7 @@ Int64List* MtpDataPacket::getAInt64() {
             delete result;
             return NULL;
         }
-        result->push(value);
+        result->push_back(value);
     }
     return result;
 }
@@ -237,7 +241,7 @@ UInt64List* MtpDataPacket::getAUInt64() {
             delete result;
             return NULL;
         }
-        result->push(value);
+        result->push_back(value);
     }
     return result;
 }
@@ -508,7 +512,7 @@ int MtpDataPacket::readData(struct usb_request *request, void* buffer, int lengt
 // Queue a read request.  Call readDataWait to wait for result
 int MtpDataPacket::readDataAsync(struct usb_request *req) {
     if (usb_request_queue(req)) {
-        ALOGE("usb_endpoint_queue failed, errno: %d", errno);
+        MTPE("usb_endpoint_queue failed, errno: %d", errno);
         return -1;
     }
     return 0;
@@ -531,7 +535,7 @@ int MtpDataPacket::readDataHeader(struct usb_request *request) {
 
 int MtpDataPacket::write(struct usb_request *request, UrbPacketDivisionMode divisionMode) {
     if (mPacketSize < MTP_CONTAINER_HEADER_SIZE || mPacketSize > MTP_BUFFER_SIZE) {
-        ALOGE("Illegal packet size.");
+        MTPE("Illegal packet size.");
         return -1;
     }
 
@@ -547,7 +551,7 @@ int MtpDataPacket::write(struct usb_request *request, UrbPacketDivisionMode divi
         request->buffer_length = write_size;
         const int result = transfer(request);
         if (result < 0) {
-            ALOGE("Failed to write bytes to the device.");
+            MTPE("Failed to write bytes to the device.");
             return -1;
         }
         processedBytes += result;
@@ -563,7 +567,7 @@ int MtpDataPacket::write(struct usb_request *request,
     // Obtain the greatest multiple of minimum packet size that is not greater than
     // MTP_BUFFER_SIZE.
     if (request->max_packet_size <= 0) {
-        ALOGE("Cannot determine bulk transfer size due to illegal max packet size %d.",
+        MTPE("Cannot determine bulk transfer size due to illegal max packet size %d.",
               request->max_packet_size);
         return -1;
     }
@@ -602,7 +606,7 @@ int MtpDataPacket::write(struct usb_request *request,
                         mBuffer + bulkTransferSize,
                         bulkTransferPayloadSize);
                 if (result < 0) {
-                    ALOGE("Found an error while reading data from FD. Send 0 data instead.");
+                    MTPE("Found an error while reading data from FD. Send 0 data instead.");
                     readError = true;
                 }
             }
@@ -618,7 +622,7 @@ int MtpDataPacket::write(struct usb_request *request,
         const int result = transfer(request);
         if (result != static_cast<ssize_t>(bulkTransferSize)) {
             // Cannot recover writing error.
-            ALOGE("Found an error while write data to MtpDevice.");
+            MTPE("Found an error while write data to MtpDevice.");
             return -1;
         }
 

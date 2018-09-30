@@ -18,18 +18,20 @@
 #define _MTP_DEBUG_H
 
 // #define LOG_NDEBUG 0
-#include <utils/Log.h>
-
 #include "MtpTypes.h"
 
+#include <log/log.h>
 
 #ifdef __cplusplus
 extern "C" {
+#endif
 void mtpdebug(const char *fmt, ...);
 
 #define MTPI(...) fprintf(stdout, "I:[MTP] " __VA_ARGS__)
 #define MTPD(...) mtpdebug("D:[MTP] " __VA_ARGS__)
 #define MTPE(...) fprintf(stdout, "E:[MTP] " __VA_ARGS__)
+
+#ifdef __cplusplus
 }
 #endif
 
@@ -40,7 +42,6 @@ public:
     static const char* getObjectPropCodeName(MtpPropertyCode code);
     static const char* getDevicePropCodeName(MtpPropertyCode code);
     static void enableDebug();
-
 };
 
 #endif // _MTP_DEBUG_H

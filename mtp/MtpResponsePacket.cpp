@@ -54,3 +54,4 @@ int MtpResponsePacket::read(struct usb_request *request) {
     return ret;
 }
 #endif
+

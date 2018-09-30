@@ -21,6 +21,7 @@
 #include <fcntl.h>
 
 #include "IMtpHandle.h"
+#include "MtpDebug.h"
 #include "MtpRequestPacket.h"
 
 #include <usbhost/usbhost.h>
@@ -50,7 +51,7 @@ int MtpRequestPacket::read(IMtpHandle *h) {
         mPacketSize = read_size;
         mParameterCount = (read_size - MTP_CONTAINER_HEADER_SIZE) / sizeof(uint32_t);
     } else {
-        ALOGE("Malformed MTP request packet");
+        MTPE("Malformed MTP request packet");
         ret = -1;
     }
     return ret;

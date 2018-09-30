@@ -32,6 +32,7 @@
 #include "MtpServer.h"
 #include "MtpStorage.h"
 #include "MtpDebug.h"
+#include "MtpDescriptors.h"
 #include "MtpMessage.hpp"
 
 #include <string>
@@ -39,24 +40,48 @@
 void twmtp_MtpServer::set_device_info() {
 	char property[512];
 	property_get("ro.build.product", property, "unknown manufacturer");
-	mtpinfo.deviceInfoManufacturer = android::String8(property);
+	mtpinfo.deviceInfoManufacturer = MtpStringBuffer(property);
 	property_get("ro.product.model", property, "unknown model");
-	mtpinfo.deviceInfoModel = android::String8(property);
-	mtpinfo.deviceInfoDeviceVersion = android::String8("None");
+	mtpinfo.deviceInfoModel = MtpStringBuffer(property);
+	mtpinfo.deviceInfoDeviceVersion = MtpStringBuffer("None");
 	property_get("ro.serialno", property, "unknown serial number");
-	mtpinfo.deviceInfoSerialNumber = android::String8(property);
+	mtpinfo.deviceInfoSerialNumber = MtpStringBuffer(property);
 }
 
 void twmtp_MtpServer::start()
 {
+	int controlFd;
+
 	usePtp =  false;
-	MyMtpDatabase* mtpdb = new MyMtpDatabase();
+	IMtpDatabase* mtpdb = new IMtpDatabase();
 	MTPD("launching server\n");
-	server = new MtpServer(mtpdb,\ 
+        /* Sleep for a bit before we open the MTP USB device because some
+         * devices are not ready due to the kernel not responding to our
+         * sysfs requests right away.
+         */
+        usleep(800000);
+#ifdef USB_MTP_DEVICE
+#define STRINGIFY(x) #x
+#define EXPAND(x) STRINGIFY(x)
+        const char* mtp_device = EXPAND(USB_MTP_DEVICE);
+        MTPI("Using '%s' for MTP device.\n", EXPAND(USB_MTP_DEVICE));
+#else
+        const char* mtp_device = "/dev/mtp_usb";
+#endif
+        int fd = open(mtp_device, O_RDWR);
+        if (fd < 0) {
+                MTPE("could not open MTP driver, errno: %d\n", errno);
+                return;
+        }
+        MTPD("MTP fd: %d\n", fd);
+	bool ffs_ok = access(FFS_MTP_EP0, W_OK) == 0;
+	if (ffs_ok)
+		controlFd = open(FFS_MTP_EP0, O_RDWR);
+	else
+		controlFd = open(mtp_device, O_WRONLY);
+	server = new MtpServer(mtpdb,\
+		controlFd,\
 		usePtp,\
-		0, \
-		0664, \
-		0775,
 		mtpinfo.deviceInfoManufacturer, \
 		mtpinfo.deviceInfoModel, \
 		mtpinfo.deviceInfoDeviceVersion, \
@@ -71,7 +96,6 @@ void twmtp_MtpServer::start()
 	pthread_create(&thread, NULL, p, this);
 	// This loop restarts the MTP process if the device is unplugged and replugged in
 	while (true) {
-		server->configure(usePtp);
 		server->run();
 		usleep(800000);
 	}
@@ -127,11 +151,10 @@ void twmtp_MtpServer::add_storage()
 			if (!pathStr.empty()) {
 				std::string descriptionStr = stores->at(i)->display;
 				int storageID = stores->at(i)->mtpid;
-				long reserveSpace = 1;
 				bool removable = false;
 				uint64_t maxFileSize = stores->at(i)->maxFileSize;
 				if (descriptionStr != "") {
-					MtpStorage* storage = new MtpStorage(storageID, &pathStr[0], &descriptionStr[0], reserveSpace, removable, maxFileSize, refserver);
+					MtpStorage* storage = new MtpStorage(storageID, &pathStr[0], &descriptionStr[0], removable, maxFileSize);
 					server->addStorage(storage);
 				}
 		}
@@ -170,9 +193,8 @@ int twmtp_MtpServer::mtppipe_thread(void)
 			if (mtp_message.message_type == MTP_MESSAGE_ADD_STORAGE) {
 				MTPI("mtppipe add storage %i '%s'\n", mtp_message.storage_id, mtp_message.path);
 				if (mtp_message.storage_id) {
-					long reserveSpace = 1;
 					bool removable = false;
-					MtpStorage* storage = new MtpStorage(mtp_message.storage_id, &mtp_message.path[0], &mtp_message.display[0], reserveSpace, removable, mtp_message.maxFileSize, refserver);
+					MtpStorage* storage = new MtpStorage(mtp_message.storage_id, &mtp_message.path[0], &mtp_message.display[0], removable, mtp_message.maxFileSize);
 					server->addStorage(storage);
 					MTPD("mtppipe done adding storage\n");
 				} else {

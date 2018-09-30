@@ -23,7 +23,7 @@
 #include "IMtpHandle.h"
 #include "MtpEventPacket.h"
 
-#include "twrpusbhost/usbhost.h"
+#include <usbhost/usbhost.h>
 
 MtpEventPacket::MtpEventPacket()
     :   MtpPacket(512)
@@ -53,7 +53,7 @@ int MtpEventPacket::sendRequest(struct usb_request *request) {
     request->buffer_length = mBufferSize;
     mPacketSize = 0;
     if (usb_request_queue(request)) {
-        ALOGE("usb_endpoint_queue failed, errno: %d", errno);
+        MTPE("usb_endpoint_queue failed, errno: %d", errno);
         return -1;
     }
     return 0;

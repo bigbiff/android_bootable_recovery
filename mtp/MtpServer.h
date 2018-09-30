@@ -21,40 +21,34 @@
 #include "MtpDataPacket.h"
 #include "MtpResponsePacket.h"
 #include "MtpEventPacket.h"
+#include "MtpStringBuffer.h"
 #include "mtp.h"
 #include "MtpUtils.h"
 #include "IMtpHandle.h"
 
-#include <utils/threads.h>
-#include <queue>
 #include <memory>
 #include <mutex>
+#include <queue>
 
-class MtpDatabase;
+class IMtpDatabase;
 class MtpStorage;
 
 class MtpServer {
 
 private:
-    MtpDatabase*        mDatabase;
+    IMtpDatabase*       mDatabase;
 
     // appear as a PTP device
     bool                mPtp;
 
-    // group to own new files and folders
-    int                 mFileGroup;
-    // permissions for new files and directories
-    int                 mFilePermission;
-    int                 mDirectoryPermission;
-
     // Manufacturer to report in DeviceInfo
-    MtpString           mDeviceInfoManufacturer;
+    MtpStringBuffer     mDeviceInfoManufacturer;
     // Model to report in DeviceInfo
-    MtpString           mDeviceInfoModel;
+    MtpStringBuffer     mDeviceInfoModel;
     // Device version to report in DeviceInfo
-    MtpString           mDeviceInfoDeviceVersion;
+    MtpStringBuffer     mDeviceInfoDeviceVersion;
     // Serial number to report in DeviceInfo
-    MtpString           mDeviceInfoSerialNumber;
+    MtpStringBuffer     mDeviceInfoSerialNumber;
 
     // current session ID
     MtpSessionID        mSessionID;
@@ -69,22 +63,23 @@ private:
 
     MtpStorageList      mStorages;
 
-    static IMtpHandle*  sHandle;
+    IMtpHandle*         mHandle;
 
     // handle for new object, set by SendObjectInfo and used by SendObject
     MtpObjectHandle     mSendObjectHandle;
     MtpObjectFormat     mSendObjectFormat;
-    MtpString           mSendObjectFilePath;
+    MtpStringBuffer     mSendObjectFilePath;
     size_t              mSendObjectFileSize;
+    time_t              mSendObjectModifiedTime;
 
-    android::Mutex               mMutex;
+    std::mutex          mMutex;
 
     // represents an MTP object that is being edited using the android extensions
     // for direct editing (BeginEditObject, SendPartialObject, TruncateObject and EndEditObject)
     class ObjectEdit {
         public:
         MtpObjectHandle     mHandle;
-        MtpString           mPath;
+        MtpStringBuffer           mPath;
         uint64_t            mSize;
         MtpObjectFormat     mFormat;
         int                 mFD;
@@ -98,15 +93,14 @@ private:
             close(mFD);
         }
     };
-    android::Vector<ObjectEdit*>  mObjectEditList;
+    std::vector<ObjectEdit*>  mObjectEditList;
 
 public:
-                        MtpServer(MtpDatabase* database, bool ptp,
-                                    int fileGroup, int filePerm, int directoryPerm,
-                                    const MtpString& deviceInfoManufacturer,
-                                    const MtpString& deviceInfoModel,
-                                    const MtpString& deviceInfoDeviceVersion,
-                                    const MtpString& deviceInfoSerialNumber);
+                        MtpServer(IMtpDatabase* database, int controlFd, bool ptp,
+                                    const char *deviceInfoManufacturer,
+                                    const char *deviceInfoModel,
+                                    const char *deviceInfoDeviceVersion,
+                                    const char *deviceInfoSerialNumber);
     virtual             ~MtpServer();
 
     MtpStorage*         getStorage(MtpStorageID id);
@@ -115,7 +109,6 @@ public:
     void                addStorage(MtpStorage* storage);
     void                removeStorage(MtpStorage* storage);
 
-    static int          configure(bool usePtp);
     void                run();
 
     void                sendObjectAdded(MtpObjectHandle handle);
@@ -128,7 +121,7 @@ private:
     void                sendStoreRemoved(MtpStorageID id);
     void                sendEvent(MtpEventCode code, uint32_t param1);
 
-    void                addEditObject(MtpObjectHandle handle, MtpString& path,
+    void                addEditObject(MtpObjectHandle handle, MtpStringBuffer& path,
                                 uint64_t size, MtpObjectFormat format, int fd);
     ObjectEdit*         getEditObject(MtpObjectHandle handle);
     void                removeEditObject(MtpObjectHandle handle);
@@ -159,14 +152,14 @@ private:
     MtpResponseCode     doSendObjectInfo();
     MtpResponseCode     doSendObject();
     MtpResponseCode     doDeleteObject();
+    MtpResponseCode     doMoveObject();
+    MtpResponseCode     doCopyObject();
     MtpResponseCode     doGetObjectPropDesc();
     MtpResponseCode     doGetDevicePropDesc();
     MtpResponseCode     doSendPartialObject();
     MtpResponseCode     doTruncateObject();
     MtpResponseCode     doBeginEditObject();
     MtpResponseCode     doEndEditObject();
-
-    bool                SetProperty(const std::string& key, const std::string& value);
 };
 
 #endif // _MTP_SERVER_H

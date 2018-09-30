@@ -12,16 +12,27 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * Copyright (C) 2014 TeamWin - bigbiff and Dees_Troy mtp database conversion to C++
  */
 
 #ifndef _MTP_UTILS_H
 #define _MTP_UTILS_H
 
+#include "private/android_filesystem_config.h"
+
 #include <stdint.h>
+
+constexpr int FILE_GROUP = AID_MEDIA_RW;
+constexpr int FILE_PERM = 0664;
+constexpr int DIR_PERM = 0775;
 
 bool parseDateTime(const char* dateTime, time_t& outSeconds);
 void formatDateTime(time_t seconds, char* buffer, int bufferLength);
 
+int makeFolder(const char *path);
+int copyRecursive(const char *fromPath, const char *toPath);
+int copyFile(const char *fromPath, const char *toPath);
+bool deletePath(const char* path);
+int renameTo(const char *oldPath, const char *newPath);
+
+void closeObjFd(int fd, const char *path);
 #endif // _MTP_UTILS_H
