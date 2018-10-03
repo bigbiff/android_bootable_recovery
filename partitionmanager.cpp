@@ -2233,7 +2233,7 @@ bool TWPartitionManager::Enable_MTP(void) {
 	/* To enable MTP debug, use the twrp command line feature:
 	 * twrp set tw_mtp_debug 1
 	 */
-	twrpMtp *mtp = new twrpMtp(DataManager::GetIntValue("tw_mtp_debug"));
+	twrpMtp *mtp = new twrpMtp(true);
 	mtppid = mtp->forkserver(mtppipe);
 	if (mtppid) {
 		close(mtppipe[0]); // Host closes read side

@@ -50,7 +50,7 @@ void twmtp_MtpServer::set_device_info() {
 
 void twmtp_MtpServer::start()
 {
-	int controlFd;
+	int controlFd = 0;
 
 	usePtp =  false;
 	IMtpDatabase* mtpdb = new IMtpDatabase();
@@ -68,17 +68,19 @@ void twmtp_MtpServer::start()
 #else
         const char* mtp_device = "/dev/mtp_usb";
 #endif
-        int fd = open(mtp_device, O_RDWR);
-        if (fd < 0) {
-                MTPE("could not open MTP driver, errno: %d\n", errno);
-                return;
-        }
-        MTPD("MTP fd: %d\n", fd);
 	bool ffs_ok = access(FFS_MTP_EP0, W_OK) == 0;
-	if (ffs_ok)
+	if (ffs_ok) {
+		MTPD("Opening FFS EPO\n");
 		controlFd = open(FFS_MTP_EP0, O_RDWR);
-	else
+	} else {
 		controlFd = open(mtp_device, O_WRONLY);
+	}
+	if (controlFd < 0) {
+		MTPE("could not open MTP driver, errno: %d\n", errno);
+		return;
+	}
+        MTPD("MTP fd: %d\n", controlFd);
+
 	server = new MtpServer(mtpdb,\
 		controlFd,\
 		usePtp,\

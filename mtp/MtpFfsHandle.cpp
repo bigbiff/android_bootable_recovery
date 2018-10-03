@@ -36,6 +36,7 @@
 #include "MtpDescriptors.h"
 #include "MtpFfsHandle.h"
 #include "mtp.h"
+#include "MtpDebug.h"
 
 namespace {
 
@@ -60,7 +61,7 @@ struct mtp_device_status {
 int MtpFfsHandle::getPacketSize(int ffs_fd) {
     struct usb_endpoint_descriptor desc;
     if (ioctl(ffs_fd, FUNCTIONFS_ENDPOINT_DESC, reinterpret_cast<unsigned long>(&desc))) {
-        PLOG(ERROR) << "Could not get FFS bulk-in descriptor";
+        MTPE("Could not get FFS bulk-in descriptor\n");
         return MAX_PACKET_SIZE_HS;
     } else {
         return desc.wMaxPacketSize;
@@ -83,7 +84,7 @@ bool MtpFfsHandle::openEndpoints(bool ptp) {
     if (mBulkIn < 0) {
         mBulkIn.reset(TEMP_FAILURE_RETRY(open(ptp ? FFS_PTP_EP_IN : FFS_MTP_EP_IN, O_RDWR)));
         if (mBulkIn < 0) {
-            PLOG(ERROR) << (ptp ? FFS_PTP_EP_IN : FFS_MTP_EP_IN) << ": cannot open bulk in ep";
+            MTPE("cannot open bulk in ep\n");
             return false;
         }
     }
@@ -91,7 +92,7 @@ bool MtpFfsHandle::openEndpoints(bool ptp) {
     if (mBulkOut < 0) {
         mBulkOut.reset(TEMP_FAILURE_RETRY(open(ptp ? FFS_PTP_EP_OUT : FFS_MTP_EP_OUT, O_RDWR)));
         if (mBulkOut < 0) {
-            PLOG(ERROR) << (ptp ? FFS_PTP_EP_OUT : FFS_MTP_EP_OUT) << ": cannot open bulk out ep";
+            MTPE("cannot open bulk out ep\n");
             return false;
         }
     }
@@ -99,7 +100,7 @@ bool MtpFfsHandle::openEndpoints(bool ptp) {
     if (mIntr < 0) {
         mIntr.reset(TEMP_FAILURE_RETRY(open(ptp ? FFS_PTP_EP_INTR : FFS_MTP_EP_INTR, O_RDWR)));
         if (mIntr < 0) {
-            PLOG(ERROR) << (ptp ? FFS_PTP_EP_INTR : FFS_MTP_EP_INTR) << ": cannot open intr ep";
+            MTPE("cannot open intr ep\n");
             return false;
         }
     }
@@ -110,11 +111,11 @@ void MtpFfsHandle::advise(int fd) {
     for (unsigned i = 0; i < NUM_IO_BUFS; i++) {
         if (posix_madvise(mIobuf[i].bufs.data(), MAX_FILE_CHUNK_SIZE,
                 POSIX_MADV_SEQUENTIAL | POSIX_MADV_WILLNEED) < 0)
-            PLOG(ERROR) << "Failed to madvise";
+            MTPE("Failed to madvise\n");
     }
     if (posix_fadvise(fd, 0, 0,
                 POSIX_FADV_SEQUENTIAL | POSIX_FADV_NOREUSE | POSIX_FADV_WILLNEED) < 0)
-        PLOG(ERROR) << "Failed to fadvise";
+        MTPE("Failed to fadvise\n");
 }
 
 bool MtpFfsHandle::writeDescriptors(bool ptp) {
@@ -196,7 +197,7 @@ int MtpFfsHandle::handleEvent() {
         case FUNCTIONFS_RESUME:
             break;
         default:
-            LOG(ERROR) << "Mtp Event " << event->type << " (unknown)";
+            MTPE("Mtp Event (unknown)\n");
         }
     }
     return ret;
@@ -214,7 +215,7 @@ int MtpFfsHandle::handleControlRequest(const struct usb_ctrlrequest *setup) {
 
     if (!(type & USB_DIR_IN)) {
         if (::read(mControl, buf.data(), length) != length) {
-            PLOG(ERROR) << "Mtp error ctrlreq read data";
+            MTPE("Mtp error ctrlreq read data");
         }
     }
 
@@ -247,15 +248,15 @@ int MtpFfsHandle::handleControlRequest(const struct usb_ctrlrequest *setup) {
             break;
         }
         default:
-            LOG(ERROR) << "Unrecognized Mtp class request! " << code;
+            MTPE("Unrecognized Mtp class request!\n");
         }
     } else {
-        LOG(ERROR) << "Unrecognized request type " << type;
+        MTPE("Unrecognized request type\n");
     }
 
     if (type & USB_DIR_IN) {
         if (::write(mControl, buf.data(), length) != length) {
-            PLOG(ERROR) << "Mtp error ctrlreq write data";
+            MTPE("Mtp error ctrlreq write data");
         }
     }
     return 0;
@@ -278,7 +279,7 @@ int MtpFfsHandle::start(bool ptp) {
 
     memset(&mCtx, 0, sizeof(mCtx));
     if (io_setup(AIO_BUFS_MAX, &mCtx) < 0) {
-        PLOG(ERROR) << "unable to setup aio";
+        MTPE("unable to setup aio");
         return -1;
     }
     mEventFd.reset(eventfd(0, EFD_NONBLOCK));
@@ -297,7 +298,7 @@ void MtpFfsHandle::close() {
     closeConfig();
 }
 
-int MtpFfsHandle::waitEvents(struct io_buffer *buf, int min_events, struct io_event *events,
+int MtpFfsHandle::waitEvents(__attribute__((unused)) struct io_buffer *buf, int min_events, struct io_event *events,
         int *counter) {
     int num_events = 0;
     int ret = 0;
@@ -305,7 +306,7 @@ int MtpFfsHandle::waitEvents(struct io_buffer *buf, int min_events, struct io_ev
 
     while (num_events < min_events) {
         if (poll(mPollFds, 2, 0) == -1) {
-            PLOG(ERROR) << "Mtp error during poll()";
+            MTPE("Mtp error during poll()\n");
             return -1;
         }
         if (mPollFds[0].revents & POLLIN) {
@@ -319,7 +320,7 @@ int MtpFfsHandle::waitEvents(struct io_buffer *buf, int min_events, struct io_ev
             uint64_t ev_cnt = 0;
 
             if (::read(mEventFd, &ev_cnt, sizeof(ev_cnt)) == -1) {
-                PLOG(ERROR) << "Mtp unable to read eventfd";
+                MTPE("Mtp unable to read eventfd\n");
                 error = errno;
                 continue;
             }
@@ -330,14 +331,14 @@ int MtpFfsHandle::waitEvents(struct io_buffer *buf, int min_events, struct io_ev
             // wait for. Thus we never want io_getevents to block.
             int this_events = TEMP_FAILURE_RETRY(io_getevents(mCtx, 0, AIO_BUFS_MAX, events, &ZERO_TIMEOUT));
             if (this_events == -1) {
-                PLOG(ERROR) << "Mtp error getting events";
+                MTPE("Mtp error getting events");
                 error = errno;
             }
             // Add up the total amount of data and find errors on the way.
             for (unsigned j = 0; j < static_cast<unsigned>(this_events); j++) {
                 if (events[j].res < 0) {
                     errno = -events[j].res;
-                    PLOG(ERROR) << "Mtp got error event at " << j << " and " << buf->actual << " total";
+                    MTPE("Mtp got error event\n");
                     error = errno;
                 }
                 ret += events[j].res;
@@ -358,9 +359,9 @@ int MtpFfsHandle::waitEvents(struct io_buffer *buf, int min_events, struct io_ev
 void MtpFfsHandle::cancelTransaction() {
     // Device cancels by stalling both bulk endpoints.
     if (::read(mBulkIn, nullptr, 0) != -1 || errno != EBADMSG)
-        PLOG(ERROR) << "Mtp stall failed on bulk in";
+        MTPE("Mtp stall failed on bulk in\n");
     if (::write(mBulkOut, nullptr, 0) != -1 || errno != EBADMSG)
-        PLOG(ERROR) << "Mtp stall failed on bulk out";
+        MTPE("Mtp stall failed on bulk out\n");
     mCanceled = true;
     errno = ECANCELED;
 }
@@ -378,7 +379,7 @@ int MtpFfsHandle::cancelEvents(struct iocb **iocb, struct io_event *events, unsi
 
     for (unsigned j = start; j < end; j++) {
         if (io_cancel(mCtx, iocb[j], nullptr) != -1 || errno != EINPROGRESS) {
-            PLOG(ERROR) << "Mtp couldn't cancel request " << j;
+            MTPE("Mtp couldn't cancel request\n");
         } else {
             num_events++;
         }
@@ -389,13 +390,13 @@ int MtpFfsHandle::cancelEvents(struct iocb **iocb, struct io_event *events, unsi
     }
     int evs = TEMP_FAILURE_RETRY(io_getevents(mCtx, num_events, AIO_BUFS_MAX, events, nullptr));
     if (static_cast<unsigned>(evs) != num_events) {
-        PLOG(ERROR) << "Mtp couldn't cancel all requests, got " << evs;
+        MTPE("Mtp couldn't cancel all requests\n");
         ret = -1;
     }
 
     uint64_t ev_cnt = 0;
     if (num_events && ::read(mEventFd, &ev_cnt, sizeof(ev_cnt)) == -1)
-        PLOG(ERROR) << "Mtp Unable to read event fd";
+        MTPE("Mtp Unable to read event fd\n");
 
     if (ret == 0) {
         // Restore errno since it probably got overriden with EINPROGRESS.
@@ -422,7 +423,7 @@ int MtpFfsHandle::iobufSubmit(struct io_buffer *buf, int fd, unsigned length, bo
 
     ret = io_submit(mCtx, buf->actual, buf->iocb.data());
     if (ret != static_cast<int>(buf->actual)) {
-        PLOG(ERROR) << "Mtp io_submit got " << ret << " expected " << buf->actual;
+        MTPE("Mtp io_submit\n");
         if (ret != -1) {
             errno = EIO;
         }
@@ -468,7 +469,7 @@ int MtpFfsHandle::receiveFile(mtp_file_range mfr, bool zero_packet) {
             int written = aio_return(&aio);
             if (static_cast<size_t>(written) < aio.aio_nbytes) {
                 errno = written == -1 ? aio_error(&aio) : EIO;
-                PLOG(ERROR) << "Mtp error writing to disk";
+                MTPE("Mtp error writing to disk\n");
                 write_error = true;
             }
             has_write = false;
@@ -520,7 +521,7 @@ int MtpFfsHandle::receiveFile(mtp_file_range mfr, bool zero_packet) {
             } else if (ret < static_cast<int>(length)) {
                 // If file is less than 4G and we get a short packet, it's an error.
                 errno = EIO;
-                LOG(ERROR) << "Mtp got unexpected short packet";
+                MTPE("Mtp got unexpected short packet\n");
                 return -1;
             } else {
                 file_length -= ret;
@@ -620,7 +621,7 @@ int MtpFfsHandle::sendFile(mtp_file_range mfr) {
             num_read = aio_return(&aio);
             if (static_cast<size_t>(num_read) < aio.aio_nbytes) {
                 errno = num_read == -1 ? aio_error(&aio) : EIO;
-                PLOG(ERROR) << "Mtp error reading from disk";
+                MTPE("Mtp error reading from disk\n");
                 cancelTransaction();
                 return -1;
             }
@@ -667,7 +668,7 @@ void MtpFfsHandle::doSendEvent(mtp_event me) {
     unsigned length = me.length;
     int ret = ::write(mIntr, me.data, length);
     if (static_cast<unsigned>(ret) != length)
-        PLOG(ERROR) << "Mtp error sending event thread!";
+        MTPE("Mtp error sending event thread!\n");
     delete[] reinterpret_cast<char*>(me.data);
 }
 

@@ -67,3 +67,5 @@ int MtpDevHandle::start(bool /* ptp */) {
 void MtpDevHandle::close() {
     mFd.reset();
 }
+
+bool MtpDevHandle::writeDescriptors(bool usePtp) { return usePtp; }
