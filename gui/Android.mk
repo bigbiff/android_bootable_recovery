@@ -166,10 +166,10 @@ ifeq ($(TW_CUSTOM_THEME),)
     endif
 
     TWRP_THEME_LOC := $(LOCAL_PATH)/theme/$(TW_THEME)
-    ifeq ($(wildcard $(TWRP_THEME_LOC)/ui.xml),)
-        $(warning $(TW_THEME_WARNING_MSG))
-        $(error Theme selection failed; exiting)
-    endif
+    #ifeq ($(wildcard $(TWRP_THEME_LOC)/ui.xml),)
+    #    $(warning $(TW_THEME_WARNING_MSG))
+    #    $(error Theme selection failed; exiting)
+    #endif
 
     TWRP_RES += $(LOCAL_PATH)/theme/common/$(word 1,$(subst _, ,$(TW_THEME))).xml
     # for future copying of used include xmls and fonts:

@@ -39,6 +39,9 @@ Node::Node()
 Node::Node(MtpObjectHandle handle, MtpObjectHandle parent, const std::string& name)
 	: handle(handle), parent(parent), name(name)
 {
+                MTPD("handle: %d\n", handle);
+                MTPD("parent: %d\n", parent);
+                MTPD("name: %s\n", name.c_str());
 }
 
 void Node::rename(const std::string& newName) {

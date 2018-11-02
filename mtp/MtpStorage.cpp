@@ -149,7 +149,6 @@ int MtpStorage::createDB() {
         mtpstorageparent = getPath();
         // root directory is special: handle 0, parent 0, and empty path
         mtpmap[0] = new Tree(0, 0, "");
-        MTPD("MtpStorage::createDB DONE\n");
         if (use_mutex) {
                 sendEvents = true;
                 MTPD("inotify_init\n");
@@ -166,6 +165,8 @@ int MtpStorage::createDB() {
         // for debugging and caching purposes, read the root dir already now
         readDir(mtpstorageparent, mtpmap[0]);
         // all other dirs are read on demand
+	//
+        MTPD("MtpStorage::createDB DONE\n");
         return 0;
 }
 
