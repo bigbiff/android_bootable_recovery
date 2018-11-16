@@ -34,6 +34,7 @@
 #include "MtpDebug.h"
 #include "MtpDescriptors.h"
 #include "MtpMessage.hpp"
+#include "mtp_MtpDatabase.hpp"
 
 #include <string>
 

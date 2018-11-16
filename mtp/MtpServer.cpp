@@ -32,7 +32,7 @@
 #define LOG_TAG "MtpServer"
 
 #include "MtpDebug.h"
-#include "IMtpDatabase.h"
+#include "mtp_MtpDatabase.hpp"
 #include "MtpDescriptors.h"
 #include "MtpDevHandle.h"
 #include "MtpFfsCompatHandle.h"
@@ -132,7 +132,7 @@ MtpServer::~MtpServer() {
 
 void MtpServer::addStorage(MtpStorage* storage) {
     std::lock_guard<std::mutex> lg(mMutex);
-
+    mDatabase->createDB(storage, storage->getStorageID());
     mStorages.push_back(storage);
     sendStoreAdded(storage->getStorageID());
 }
@@ -972,8 +972,10 @@ MtpResponseCode MtpServer::doSendObjectInfo() {
     }
 
     MTPD("path: %s parent: %d storageID: %08X", (const char*)path, parent, storageID);
+    uint64_t size = 0; // TODO: this needs to be implemented
+    time_t modified_time = 0; // TODO: this needs to be implemented
     MtpObjectHandle handle = mDatabase->beginSendObject((const char*)path, format,
-            parent, storageID);
+            parent, storageID, size, modified_time);
     if (handle == kInvalidObjectHandle) {
         return MTP_RESPONSE_GENERAL_ERROR;
     }
@@ -984,7 +986,7 @@ MtpResponseCode MtpServer::doSendObjectInfo() {
             return MTP_RESPONSE_GENERAL_ERROR;
 
         // SendObject does not get sent for directories, so call endSendObject here instead
-        mDatabase->endSendObject(handle, MTP_RESPONSE_OK);
+        mDatabase->endSendObject((const char*)path, handle, format, MTP_RESPONSE_OK);
     }
     mSendObjectFilePath = path;
     // save the handle for the SendObject call, which should follow
@@ -1245,7 +1247,7 @@ done:
     // reset so we don't attempt to send the data back
     mData.reset();
 
-    mDatabase->endSendObject(mSendObjectHandle, result == MTP_RESPONSE_OK);
+    mDatabase->endSendObject(mSendObjectFilePath, mSendObjectHandle, mSendObjectFormat, result == MTP_RESPONSE_OK);
     mSendObjectHandle = kInvalidObjectHandle;
     mSendObjectFormat = 0;
     mSendObjectModifiedTime = 0;

@@ -212,12 +212,12 @@ int IMtpDatabase::SUPPORTED_PLAYBACK_FORMATS[26] = {
 MtpObjectHandle IMtpDatabase::beginSendObject(const char* path,
 											MtpObjectFormat format,
 											MtpObjectHandle parent,
-											MtpStorageID storage,
+											MtpStorageID storageID,
 											uint64_t size,
 											time_t modified) {
-	if (storagemap.find(storage) == storagemap.end())
+	if (storagemap.find(storageID) == storagemap.end())
 		return kInvalidObjectHandle;
-	return storagemap[storage]->beginSendObject(path, format, parent, size, modified);
+	return storagemap[storageID]->beginSendObject(path, format, parent, size, modified);
 }
 
 void IMtpDatabase::endSendObject(const char* path, MtpObjectHandle handle,
@@ -233,7 +233,6 @@ void IMtpDatabase::endSendObject(const char* path, MtpObjectHandle handle,
 }
 
 void IMtpDatabase::createDB(MtpStorage* storage, MtpStorageID storageID) {
-	MTPD("IMtpDatabase::createDB called\n");
 	storagemap[storageID] = storage;
 	storage->createDB();
 }
@@ -863,4 +862,39 @@ void IMtpDatabase::unlockMutex(void) {
 	for (storit = storagemap.begin(); storit != storagemap.end(); storit++) {
 		storit->second->unlockMutex(0);
 	}
+}
+
+MtpResponseCode IMtpDatabase::beginDeleteObject(MtpObjectHandle handle __unused) {
+    MTPD("IMtpDatabase::beginDeleteObject not implemented yet\n");
+    return MTP_RESPONSE_INVALID_OBJECT_HANDLE;
+}
+
+void IMtpDatabase::endDeleteObject(MtpObjectHandle handle __unused, bool succeeded __unused) {
+    MTPD("IMtpDatabase::endDeleteObject not implemented yet\n");
+}
+
+void IMtpDatabase::rescanFile(const char* path __unused, MtpObjectHandle handle __unused, MtpObjectFormat format __unused) {
+    MTPD("IMtpDatabase::rescanFile not implemented yet\n");
+}
+
+MtpResponseCode IMtpDatabase::beginMoveObject(MtpObjectHandle handle __unused, MtpObjectHandle newParent __unused,
+                                            MtpStorageID newStorage __unused) {
+    MTPD("IMtpDatabase::beginMoveObject not implemented yet\n");
+    return MTP_RESPONSE_INVALID_OBJECT_HANDLE;
+}
+
+void IMtpDatabase::endMoveObject(MtpObjectHandle oldParent __unused, MtpObjectHandle newParent __unused,
+                                            MtpStorageID oldStorage __unused, MtpStorageID newStorage __unused,
+                                            MtpObjectHandle handle __unused, bool succeeded __unused) {
+    MTPD("IMtpDatabase::endMoveObject not implemented yet\n");
+}
+
+MtpResponseCode IMtpDatabase::beginCopyObject(MtpObjectHandle handle __unused, MtpObjectHandle newParent __unused,
+                                            MtpStorageID newStorage __unused) {
+    MTPD("IMtpDatabase::beginCopyObject not implemented yet\n");
+    return MTP_RESPONSE_INVALID_OBJECT_HANDLE;
+}
+
+void IMtpDatabase::endCopyObject(MtpObjectHandle handle __unused, bool succeeded __unused) {
+    MTPD("IMtpDatabase::endCopyObject not implemented yet\n");
 }

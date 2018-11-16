@@ -63,12 +63,12 @@ public:
                                     IMtpDatabase();
     virtual                         ~IMtpDatabase();
 
-    void		      	    createDB(MtpStorage* storage, MtpStorageID storageID);
-	void			    destroyDB(MtpStorageID storageID);
+    virtual void                    createDB(MtpStorage* storage, MtpStorageID storageID);
+    virtual void                    destroyDB(MtpStorageID storageID);
     virtual MtpObjectHandle         beginSendObject(const char* path,
                                             MtpObjectFormat format,
                                             MtpObjectHandle parent,
-                                            MtpStorageID storage,
+                                            MtpStorageID storageID,
                                             uint64_t size,
                                             time_t modified);
 
@@ -142,5 +142,22 @@ public:
     virtual void                    sessionEnded();
     virtual void                    lockMutex();
     virtual void                    unlockMutex();
+
+    virtual MtpResponseCode         beginDeleteObject(MtpObjectHandle handle);
+    virtual void                    endDeleteObject(MtpObjectHandle handle, bool succeeded);
+    // Called to rescan a file, such as after an edit.
+    virtual void                    rescanFile(const char* path,
+                                            MtpObjectHandle handle,
+                                            MtpObjectFormat format);
+    virtual MtpResponseCode         beginMoveObject(MtpObjectHandle handle, MtpObjectHandle newParent,
+                                            MtpStorageID newStorage);
+
+    virtual void                    endMoveObject(MtpObjectHandle oldParent, MtpObjectHandle newParent,
+                                            MtpStorageID oldStorage, MtpStorageID newStorage,
+                                            MtpObjectHandle handle, bool succeeded);
+
+    virtual MtpResponseCode         beginCopyObject(MtpObjectHandle handle, MtpObjectHandle newParent,
+                                            MtpStorageID newStorage);
+    virtual void                    endCopyObject(MtpObjectHandle handle, bool succeeded);
 };
 #endif
