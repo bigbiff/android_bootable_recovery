@@ -1031,18 +1031,26 @@ void DataManager::Output_Version(void)
 	string Path;
 	char version[255];
 
-	if (!PartitionManager.Mount_By_Path("/cache", false)) {
-		LOGINFO("Unable to mount '%s' to write version number.\n", Path.c_str());
-		return;
-	}
-	if (!TWFunc::Path_Exists("/cache/recovery/.")) {
-		LOGINFO("Recreating /cache/recovery folder.\n");
-		if (mkdir("/cache/recovery", S_IRWXU | S_IRWXG | S_IWGRP | S_IXGRP) != 0) {
-			LOGERR("DataManager::Output_Version -- Unable to make /cache/recovery\n");
+	std::string cacheDir;
+
+	if (TWFunc::get_cache_dir() == "/cache") {
+		cacheDir = "/cache/recovery/";
+		if (!PartitionManager.Mount_By_Path("/cache", false)) {
+			LOGINFO("Unable to mount '%s' to write version number.\n", Path.c_str());
 			return;
 		}
 	}
-	Path = "/cache/recovery/.version";
+	else {
+		cacheDir = "/data/cache/recovery/";
+	}
+	if (!TWFunc::Path_Exists(cacheDir)) {
+		LOGINFO("Recreating %s folder.\n", cacheDir.c_str());
+		if (mkdir(cacheDir.c_str(), S_IRWXU | S_IRWXG | S_IWGRP | S_IXGRP) != 0) {
+			LOGERR("DataManager::Output_Version -- Unable to make %s\n", cacheDir.c_str());
+			return;
+		}
+	}
+	Path = cacheDir + ".version";
 	if (TWFunc::Path_Exists(Path)) {
 		unlink(Path.c_str());
 	}
@@ -1054,7 +1062,8 @@ void DataManager::Output_Version(void)
 	strcpy(version, TW_VERSION_STR);
 	fwrite(version, sizeof(version[0]), strlen(version) / sizeof(version[0]), fp);
 	fclose(fp);
-	TWFunc::copy_file("/etc/recovery.fstab", "/cache/recovery/recovery.fstab", 0644);
+	std::string dstFstab = cacheDir + "recovery.fstab";
+	TWFunc::copy_file("/etc/recovery.fstab", dstFstab, 0644);
 	PartitionManager.Output_Storage_Fstab();
 	sync();
 	LOGINFO("Version number saved to '%s'\n", Path.c_str());
@@ -1066,14 +1075,6 @@ void DataManager::ReadSettingsFile(void)
 #ifndef TW_OEM_BUILD
 	// Load up the values for TWRP - Sleep to let the card be ready
 	char mkdir_path[255], settings_file[255];
-	int is_enc, has_data_media;
-
-	GetValue(TW_IS_ENCRYPTED, is_enc);
-	GetValue(TW_HAS_DATA_MEDIA, has_data_media);
-	if (is_enc == 1 && has_data_media == 1) {
-		LOGINFO("Cannot load settings -- encrypted.\n");
-		return;
-	}
 
 	memset(mkdir_path, 0, sizeof(mkdir_path));
 	memset(settings_file, 0, sizeof(settings_file));
