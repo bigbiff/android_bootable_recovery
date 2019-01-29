@@ -147,16 +147,22 @@ int main(int argc, char **argv) {
 		printf("SELinux contexts loaded from /file_contexts\n");
 	{ // Check to ensure SELinux can be supported by the kernel
 		char *contexts = NULL;
+		std::string cacheDir = TWFunc::get_cache_dir();
+		std::string se_context_check = cacheDir + "recovery/";
 
-		if (PartitionManager.Mount_By_Path("/cache", false) && TWFunc::Path_Exists("/cache/recovery")) {
-			lgetfilecon("/cache/recovery", &contexts);
+		if (cacheDir == "/cache") {
+			PartitionManager.Mount_By_Path("/cache", false);
+		}
+		LOGINFO("dir: %s, contexts: %s\n", se_context_check.c_str(), strerror(errno));
+		if (TWFunc::Path_Exists(se_context_check)) {
+			lgetfilecon(se_context_check.c_str(), &contexts);
 			if (!contexts) {
-				lsetfilecon("/cache/recovery", "test");
-				lgetfilecon("/cache/recovery", &contexts);
+				lsetfilecon(se_context_check.c_str(), "test");
+				lgetfilecon(se_context_check.c_str(), &contexts);
+			} else {
+				LOGINFO("Could not check %s SELinux contexts, using /sbin/teamwin instead which may be inaccurate.\n", se_context_check.c_str());
+				lgetfilecon("/sbin/teamwin", &contexts);
 			}
-		} else {
-			LOGINFO("Could not check /cache/recovery SELinux contexts, using /sbin/teamwin instead which may be inaccurate.\n");
-			lgetfilecon("/sbin/teamwin", &contexts);
 		}
 		if (!contexts) {
 			gui_warn("no_kernel_selinux=Kernel does not have support for reading SELinux contexts.");
