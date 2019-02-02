@@ -54,9 +54,6 @@ extern "C" {
 }
 #endif
 
-#include <selinux/label.h>
-struct selabel_handle *selinux_handle;
-
 //extern int adb_server_main(int is_daemon, int server_port, int /* reply_fd */);
 
 TWPartitionManager PartitionManager;
@@ -128,51 +125,6 @@ int main(int argc, char **argv) {
 	PartitionManager.Output_Partition_Logging();
 	// Load up all the resources
 	gui_loadResources();
-
-	if (TWFunc::Path_Exists("/prebuilt_file_contexts")) {
-		if (TWFunc::Path_Exists("/file_contexts")) {
-			printf("Renaming regular /file_contexts -> /file_contexts.bak\n");
-			rename("/file_contexts", "/file_contexts.bak");
-		}
-		printf("Moving /prebuilt_file_contexts -> /file_contexts\n");
-		rename("/prebuilt_file_contexts", "/file_contexts");
-	}
-	struct selinux_opt selinux_options[] = {
-		{ SELABEL_OPT_PATH, "/file_contexts" }
-	};
-	selinux_handle = selabel_open(SELABEL_CTX_FILE, selinux_options, 1);
-	if (!selinux_handle)
-		printf("No file contexts for SELinux\n");
-	else
-		printf("SELinux contexts loaded from /file_contexts\n");
-	{ // Check to ensure SELinux can be supported by the kernel
-		char *contexts = NULL;
-		std::string cacheDir = TWFunc::get_cache_dir();
-		std::string se_context_check = cacheDir + "recovery/";
-
-		if (cacheDir == "/cache") {
-			PartitionManager.Mount_By_Path("/cache", false);
-		}
-		LOGINFO("dir: %s, contexts: %s\n", se_context_check.c_str(), strerror(errno));
-		if (TWFunc::Path_Exists(se_context_check)) {
-			lgetfilecon(se_context_check.c_str(), &contexts);
-			if (!contexts) {
-				lsetfilecon(se_context_check.c_str(), "test");
-				lgetfilecon(se_context_check.c_str(), &contexts);
-			} else {
-				LOGINFO("Could not check %s SELinux contexts, using /sbin/teamwin instead which may be inaccurate.\n", se_context_check.c_str());
-				lgetfilecon("/sbin/teamwin", &contexts);
-			}
-		}
-		if (!contexts) {
-			gui_warn("no_kernel_selinux=Kernel does not have support for reading SELinux contexts.");
-		} else {
-			free(contexts);
-			gui_msg("full_selinux=Full SELinux support is present.");
-		}
-	}
-
-	PartitionManager.Mount_By_Path("/cache", false);
 
 	bool Shutdown = false;
 	bool SkipDecryption = false;
@@ -289,10 +241,12 @@ int main(int argc, char **argv) {
 				LOGERR("Failed to start decrypt GUI page.\n");
 			} else {
 				// Check for and load custom theme if present
+				TWFunc::check_selinux_support();
 				gui_loadCustomResources();
 			}
 		}
 	} else if (datamedia) {
+		TWFunc::check_selinux_support();
 		if (tw_get_default_metadata(DataManager::GetSettingsStoragePath().c_str()) != 0) {
 			LOGINFO("Failed to get default contexts and file mode for storage files.\n");
 		} else {
@@ -396,3 +350,4 @@ int main(int argc, char **argv) {
 
 	return 0;
 }
+

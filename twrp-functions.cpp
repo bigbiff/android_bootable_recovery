@@ -37,6 +37,7 @@
 #include <sstream>
 #include <cctype>
 #include <algorithm>
+#include <selinux/label.h>
 #include "twrp-functions.hpp"
 #include "twcommon.h"
 #include "gui/gui.hpp"
@@ -57,6 +58,8 @@
 extern "C" {
 	#include "libcrecovery/common.h"
 }
+
+struct selabel_handle *selinux_handle;
 
 /* Execute a command */
 int TWFunc::Exec_Cmd(const string& cmd, string &result) {
@@ -1161,6 +1164,51 @@ std::string TWFunc::get_cache_dir() {
 	}
 	else {
 		return "/cache/";
+	}
+}
+
+void TWFunc::check_selinux_support() {
+	if (TWFunc::Path_Exists("/prebuilt_file_contexts")) {
+		if (TWFunc::Path_Exists("/file_contexts")) {
+			printf("Renaming regular /file_contexts -> /file_contexts.bak\n");
+			rename("/file_contexts", "/file_contexts.bak");
+		}
+		printf("Moving /prebuilt_file_contexts -> /file_contexts\n");
+		rename("/prebuilt_file_contexts", "/file_contexts");
+	}
+	struct selinux_opt selinux_options[] = {
+		{ SELABEL_OPT_PATH, "/file_contexts" }
+	};
+	selinux_handle = selabel_open(SELABEL_CTX_FILE, selinux_options, 1);
+	if (!selinux_handle)
+		printf("No file contexts for SELinux\n");
+	else
+		printf("SELinux contexts loaded from /file_contexts\n");
+	{ // Check to ensure SELinux can be supported by the kernel
+		char *contexts = NULL;
+		std::string cacheDir = TWFunc::get_cache_dir();
+		std::string se_context_check = cacheDir + "recovery/";
+		int ret = 0;
+		
+		if (cacheDir == "/cache") {
+			PartitionManager.Mount_By_Path("/cache", false);
+		}
+		if (TWFunc::Path_Exists(se_context_check)) {
+			ret = lgetfilecon(se_context_check.c_str(), &contexts);
+			if (ret > 0) {
+				lsetfilecon(se_context_check.c_str(), "test");
+				lgetfilecon(se_context_check.c_str(), &contexts);
+			} else {
+				LOGINFO("Could not check %s SELinux contexts, using /sbin/teamwin instead which may be inaccurate.\n", se_context_check.c_str());
+				lgetfilecon("/sbin/teamwin", &contexts);
+			}
+		}
+		if (ret < 0) {
+			gui_warn("no_kernel_selinux=Kernel does not have support for reading SELinux contexts.");
+		} else {
+			free(contexts);
+			gui_msg("full_selinux=Full SELinux support is present.");
+		}
 	}
 }
 #endif // ndef BUILD_TWRPTAR_MAIN
