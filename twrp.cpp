@@ -254,14 +254,14 @@ int main(int argc, char **argv) {
 		}
 	}
 
+	// Fixup the RTC clock on devices which require it
+	if (crash_counter == 0)
+		TWFunc::Fixup_Time_On_Boot();
+
 	// Read the settings file
 	DataManager::ReadSettingsFile();
 	PageManager::LoadLanguage(DataManager::GetStrValue("tw_language"));
 	GUIConsole::Translate_Now();
-
-	// Fixup the RTC clock on devices which require it
-	if (crash_counter == 0)
-		TWFunc::Fixup_Time_On_Boot();
 
 	// Run any outstanding OpenRecoveryScript
 	std::string cacheDir = TWFunc::get_cache_dir();
