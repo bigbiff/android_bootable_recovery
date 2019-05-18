@@ -1,5 +1,5 @@
 /*
-	Copyright 2014 to 2017 TeamWin
+	Copyright 2014 to 2019 TeamWin
 	This file is part of TWRP/TeamWin Recovery Project.
 
 	TWRP is free software: you can redistribute it and/or modify
@@ -673,10 +673,17 @@ bool TWPartitionManager::Backup_Partition(PartitionSettings *part_settings) {
 		sync();
 		sync();
 		string Full_Filename = part_settings->Backup_Folder + "/" + part_settings->Part->Backup_FileName;
-		if (!part_settings->adbbackup && part_settings->generate_digest) {
-			if (!twrpDigestDriver::Make_Digest(Full_Filename))
-				goto backup_error;
-		}
+		// if (!part_settings->adbbackup && part_settings->generate_digest) {
+		// 	twrpDigestDriver digestDriver;
+		// 	if (!digestDriver.Make_Digest(Full_Filename))
+		// 		goto backup_error;
+
+		// 	int check_digest_after_backup = 0;
+		// 	DataManager::GetValue(TW_CHECK_DIGEST_AFTER_BACKUP, check_digest_after_backup);
+		// 	if (check_digest_after_backup > 0 && !digestDriver.Check_Digest(Full_Filename)) {
+		// 		goto backup_error;
+		// 	}
+		// }
 
 		if (part_settings->Part->Has_SubPartition) {
 			std::vector<TWPartition*>::iterator subpart;
@@ -689,13 +696,19 @@ bool TWPartitionManager::Backup_Partition(PartitionSettings *part_settings) {
 						goto backup_error;
 					}
 					sync();
-					sync();
-					string Full_Filename = part_settings->Backup_Folder + "/" + part_settings->Part->Backup_FileName;
-					if (!part_settings->adbbackup && part_settings->generate_digest) {
-						if (!twrpDigestDriver::Make_Digest(Full_Filename)) {
-							goto backup_error;
-						}
-					}
+					// sync();
+					// string Full_Filename = part_settings->Backup_Folder + "/" + part_settings->Part->Backup_FileName;
+					// if (!part_settings->adbbackup && part_settings->generate_digest) {
+					// 	twrpDigestDriver digestDriver;
+					// 	if (!digestDriver.Make_Digest(Full_Filename)) {
+					// 		goto backup_error;
+					// 	}
+					// 	int check_digest_after_backup = 0;
+					// 	DataManager::GetValue(TW_CHECK_DIGEST_AFTER_BACKUP, check_digest_after_backup);
+					// 	if (check_digest_after_backup > 0 && !digestDriver.Check_Digest(Full_Filename)) {
+					// 		goto backup_error;
+					// 	}
+					// }
 				}
 			}
 		}
@@ -1091,8 +1104,9 @@ int TWPartitionManager::Run_Restore(const string& Restore_Name) {
 				}
 
 				string Full_Filename = part_settings.Backup_Folder + "/" + part_settings.Part->Backup_FileName;
+				twrpDigestDriver digestDriver;
 
-				if (check_digest > 0 && !twrpDigestDriver::Check_Digest(Full_Filename))
+				if (check_digest > 0 && !digestDriver.Check_Digest(Full_Filename))
 					return false;
 				part_settings.partition_count++;
 				part_settings.total_restore_size += part_settings.Part->Get_Restore_Size(&part_settings);
@@ -1103,7 +1117,7 @@ int TWPartitionManager::Run_Restore(const string& Restore_Name) {
 					for (subpart = Partitions.begin(); subpart != Partitions.end(); subpart++) {
 						part_settings.Part = *subpart;
 						if ((*subpart)->Is_SubPartition && (*subpart)->SubPartition_Of == parentPart->Mount_Point) {
-							if (check_digest > 0 && !twrpDigestDriver::Check_Digest(Full_Filename))
+							if (check_digest > 0 && !digestDriver.Check_Digest(Full_Filename))
 								return false;
 							part_settings.total_restore_size += (*subpart)->Get_Restore_Size(&part_settings);
 						}

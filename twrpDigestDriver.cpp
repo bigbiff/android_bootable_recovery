@@ -34,25 +34,22 @@
 
 
 bool twrpDigestDriver::Check_File_Digest(const string& Filename) {
-	twrpDigest *digest;
 	string digestfile = Filename, file_name = Filename;
 	string digest_str;
-	bool use_sha2 = false;
 
 #ifndef TW_NO_SHA2_LIBRARY
 
 	digestfile += ".sha2";
 	if (TWFunc::Path_Exists(digestfile)) {
+		set_digest_type(SHA2);
 		digest = new twrpSHA256();
-		use_sha2 = true;
 	}
 	else {
 		digestfile = Filename + ".sha256";
 		if (TWFunc::Path_Exists(digestfile)) {
-			digest = new twrpSHA256();
-			use_sha2 = true;
+			set_digest_type(SHA2);
 		} else {
-			digest = new twrpMD5();
+			set_digest_type(MD5);
 			digestfile = Filename + ".md5";
 			if (!TWFunc::Path_Exists(digestfile)) {
 				digestfile = Filename + ".md5sum";
@@ -60,7 +57,7 @@ bool twrpDigestDriver::Check_File_Digest(const string& Filename) {
 		}
 	}
 #else
-	digest = new twrpMD5();
+	set_digest_type(MD5);
 	digestfile = Filename + ".md5";
 	if (!TWFunc::Path_Exists(digestfile)) {
 		digestfile = Filename + ".md5sum";
@@ -69,7 +66,7 @@ bool twrpDigestDriver::Check_File_Digest(const string& Filename) {
 #endif
 
 	if (!TWFunc::Path_Exists(digestfile)) {
-		delete digest;
+		close_digest();
 		if (Filename.find(".zip") == std::string::npos && Filename.find(".map") == std::string::npos) {
 			gui_msg(Msg(msg::kError, "no_digest_found=No digest file found for '{1}'. Please unselect Enable Digest verification to restore.")(Filename));
 		} else {
@@ -81,27 +78,27 @@ bool twrpDigestDriver::Check_File_Digest(const string& Filename) {
 
 	if (TWFunc::read_file(digestfile, digest_str) != 0) {
 		gui_msg("digest_error=Digest Error!");
-		delete digest;
+		close_digest();
 		return false;
 	}
 
 	if (!stream_file_to_digest(file_name, digest)) {
-		delete digest;
+		close_digest();
 		return false;
 	}
 	string digest_check = digest->return_digest_string();
 	if (digest_check == digest_str) {
-		if (use_sha2)
+		if (current_digest_type == SHA2)
 			LOGINFO("SHA2 Digest: %s  %s\n", digest_str.c_str(), TWFunc::Get_Filename(Filename).c_str());
 		else
 			LOGINFO("MD5 Digest: %s  %s\n", digest_str.c_str(), TWFunc::Get_Filename(Filename).c_str());
 		gui_msg(Msg("digest_matched=Digest matched for '{1}'.")(Filename));
-		delete digest;
+		close_digest();
 		return true;
 	}
 
 	gui_msg(Msg(msg::kError, "digest_fail_match=Digest failed to match on '{1}'.")(Filename));
-	delete digest;
+	close_digest();
 	return false;
 }
 
@@ -128,42 +125,39 @@ bool twrpDigestDriver::Check_Digest(string Full_Filename) {
 }
 
 bool twrpDigestDriver::Write_Digest(string Full_Filename) {
-	twrpDigest *digest;
 	string digest_filename, digest_str;
-	int use_sha2;
 
 #ifdef TW_NO_SHA2_LIBRARY
-	use_sha2 = 0;
+	set_digest_type(MD5);
 #else
+	int use_sha2;
 	DataManager::GetValue(TW_USE_SHA2, use_sha2);
 #endif
 
-	if (use_sha2) {
+	if (current_digest_type == SHA2) {
 #ifndef TW_NO_SHA2_LIBRARY
-		digest = new twrpSHA256();
 		digest_filename = Full_Filename + ".sha2";
 		if (!stream_file_to_digest(Full_Filename, digest)) {
-			delete digest;
+			close_digest();
 			return false;
 		}
 		digest_str = digest->return_digest_string();
 		if (digest_str.empty()) {
-			delete digest;
+			close_digest();
 			return false;
 		}
 		LOGINFO("SHA2 Digest: %s  %s\n", digest_str.c_str(), TWFunc::Get_Filename(Full_Filename).c_str());
 #endif
 	}
 	else  {
-		digest = new twrpMD5();
 		digest_filename = Full_Filename + ".md5";
 		if (!stream_file_to_digest(Full_Filename, digest)) {
-			delete digest;
+			close_digest();
 			return false;
 		}
 		digest_str = digest->return_digest_string();
 		if (digest_str.empty()) {
-			delete digest;
+			close_digest();
 			return false;
 		}
 		LOGINFO("MD5 Digest: %s  %s\n", digest_str.c_str(), TWFunc::Get_Filename(Full_Filename).c_str());
@@ -178,44 +172,44 @@ bool twrpDigestDriver::Write_Digest(string Full_Filename) {
 	}
 	else {
 		gui_err("digest_error= * Digest Error!");
-		delete digest;
+		close_digest();
 		return false;
 	}
-	delete digest;
+	close_digest();
 	return true;
 }
 
-bool twrpDigestDriver::Make_Digest(string Full_Filename) {
-	string command, result;
+// bool twrpDigestDriver::Make_Digest(string Full_Filename) {
+// 	string command, result;
 
-	TWFunc::GUI_Operation_Text(TW_GENERATE_DIGEST_TEXT, gui_parse_text("{@generating_digest1}"));
-	gui_msg("generating_digest2= * Generating digest...");
-	if (TWFunc::Path_Exists(Full_Filename)) {
-		if (!Write_Digest(Full_Filename))
-			return false;
-	} else {
-		char filename[512];
-		int index = 0;
-		sprintf(filename, "%s%03i", Full_Filename.c_str(), index);
-		while (index < 1000) {
-			string digest_src(filename);
-			if (TWFunc::Path_Exists(filename)) {
-				if (!Write_Digest(filename))
-					return false;
-				}
-				else
-					break;
-				index++;
-				sprintf(filename, "%s%03i", Full_Filename.c_str(), index);
-			}
-			if (index == 0) {
-				LOGERR("Backup file: '%s' not found!\n", filename);
-					return false;
-			}
-			gui_msg("digest_created= * Digest Created.");
-	}
-	return true;
-}
+// 	TWFunc::GUI_Operation_Text(TW_GENERATE_DIGEST_TEXT, gui_parse_text("{@generating_digest1}"));
+// 	gui_msg("generating_digest2= * Generating digest...");
+// 	if (TWFunc::Path_Exists(Full_Filename)) {
+// 		if (!Write_Digest(Full_Filename))
+// 			return false;
+// 	} else {
+// 		char filename[512];
+// 		int index = 0;
+// 		sprintf(filename, "%s%03i", Full_Filename.c_str(), index);
+// 		while (index < 1000) {
+// 			string digest_src(filename);
+// 			if (TWFunc::Path_Exists(filename)) {
+// 				if (!Write_Digest(filename))
+// 					return false;
+// 				}
+// 				else
+// 					break;
+// 				index++;
+// 				sprintf(filename, "%s%03i", Full_Filename.c_str(), index);
+// 			}
+// 			if (index == 0) {
+// 				LOGERR("Backup file: '%s' not found!\n", filename);
+// 					return false;
+// 			}
+// 			gui_msg("digest_created= * Digest Created.");
+// 	}
+// 	return true;
+// }
 
 bool twrpDigestDriver::stream_file_to_digest(string filename, twrpDigest* digest) {
 	char buf[4096];
@@ -230,4 +224,24 @@ bool twrpDigestDriver::stream_file_to_digest(string filename, twrpDigest* digest
 	}
 	close(fd);
 	return true;
+}
+
+void twrpDigestDriver::set_digest_type(Digest_Type digest_type) {
+	current_digest_type = digest_type;
+	if (digest == NULL) {
+		if (current_digest_type == SHA2) {
+			digest = new twrpSHA256();	
+		}
+		else {
+			digest = new twrpMD5();
+		}
+	}
+}
+
+void twrpDigestDriver::stream_and_update_digest(char* buf) {
+	digest->update((unsigned char*)buf, sizeof(buf));
+}
+
+void twrpDigestDriver::close_digest() {
+	delete digest;
 }

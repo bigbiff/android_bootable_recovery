@@ -350,10 +350,11 @@ int TWinstall_zip(const char* path, int* wipe_cache) {
 	if (strlen(path) < 9 || strncmp(path, "/sideload", 9) != 0) {
 		string digest_str;
 		string Full_Filename = path;
+		twrpDigestDriver digestDriver;
 
 		gui_msg("check_for_digest=Checking for Digest file...");
 
-		if (*path != '@' && !twrpDigestDriver::Check_File_Digest(Full_Filename)) {
+		if (*path != '@' && !digestDriver.Check_File_Digest(Full_Filename)) {
 			LOGERR("Aborting zip install: Digest verification failed\n");
 			return INSTALL_CORRUPT;
 		}

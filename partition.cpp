@@ -44,6 +44,7 @@
 #include "set_metadata.h"
 #include "gui/gui.hpp"
 #include "adbbu/libtwadbbu.hpp"
+#include "twrpDigestDriver.hpp"
 #ifdef TW_INCLUDE_CRYPTO
 	#include "crypto/fde/cryptfs.h"
 	#ifdef TW_INCLUDE_FBE
@@ -2555,6 +2556,7 @@ bool TWPartition::Raw_Read_Write(PartitionSettings *part_settings) {
 	void* buffer = NULL;
 	unsigned long long backedup_size = 0;
 	string srcfn, destfn;
+	twrpDigestDriver digestDriver;
 
 	if (part_settings->PM_Method == PM_BACKUP) {
 		srcfn = Actual_Block_Device;
@@ -2572,6 +2574,15 @@ bool TWPartition::Raw_Read_Write(PartitionSettings *part_settings) {
 			srcfn = part_settings->Backup_Folder + "/" + Backup_FileName;
 			Remain = TWFunc::Get_File_Size(srcfn);
 		}
+	}
+
+	int use_sha2;
+	DataManager::GetValue(TW_USE_SHA2, use_sha2);
+	if (use_sha2) {
+		digestDriver.set_digest_type(SHA2);
+	}
+	else {
+		digestDriver.set_digest_type(MD5);
 	}
 
 	src_fd = open(srcfn.c_str(), O_RDONLY | O_LARGEFILE);
@@ -2617,6 +2628,8 @@ bool TWPartition::Raw_Read_Write(PartitionSettings *part_settings) {
 			LOGINFO("Error writing destination fd (%s)\n", strerror(errno));
 			goto exit;
 		}
+
+		digestDriver.stream_and_update_digest((char*) buffer);
 		backedup_size += (unsigned long long)(bs);
 		Remain -= (unsigned long long)(bs);
 		if (part_settings->progress)
@@ -2635,6 +2648,8 @@ bool TWPartition::Raw_Read_Write(PartitionSettings *part_settings) {
 
 	ret = true;
 exit:
+	digestDriver.Write_Digest(destfn);
+	digestDriver.close_digest();
 	if (src_fd >= 0)
 		close(src_fd);
 	if (dest_fd >= 0)
