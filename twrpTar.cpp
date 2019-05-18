@@ -987,10 +987,16 @@ unsigned long long twrpTar::uncompressedSize(string filename) {
 	return total_size;
 }
 
+bool update_tar_digest(const void *buffer, size_t size) {
+	
+}
+
 extern "C" ssize_t write_tar(int fd, const void *buffer, size_t size) {
+	update_tar_digest(*buffer, size);
 	return (ssize_t) write_libtar_buffer(fd, buffer, size);
 }
 
 extern "C" ssize_t write_tar_no_buffer(int fd, const void *buffer, size_t size) {
+	update_tar_digest(*buffer, size);
 	return (ssize_t) write_libtar_no_buffer(fd, buffer, size);
 }

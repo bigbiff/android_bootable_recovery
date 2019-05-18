@@ -84,6 +84,7 @@ private:
 	int tarList(std::vector<TarListStruct> *TarList, unsigned thread_id);
 	unsigned long long uncompressedSize(string filename);
 	static void Signal_Kill(int signum);
+	bool update_tar_digest(const void *buffer, size_t size);
 
 	enum Archive_Type current_archive_type;
 	unsigned long long Archive_Current_Size;
