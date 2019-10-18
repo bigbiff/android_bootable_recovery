@@ -75,7 +75,8 @@ LOCAL_SRC_FILES := \
     twrpDigestDriver.cpp \
     openrecoveryscript.cpp \
     tarWrite.c \
-    twrpAdbBuFifo.cpp
+    twrpAdbBuFifo.cpp \
+    twrpUSBManager.cpp
 
 ifneq ($(TARGET_RECOVERY_REBOOT_SRC),)
   LOCAL_SRC_FILES += $(TARGET_RECOVERY_REBOOT_SRC)
@@ -122,6 +123,7 @@ LOCAL_C_INCLUDES += \
     system/core/adb \
     system/core/libsparse \
     external/zlib \
+    external/libusb/include/libusb \
     $(LOCAL_PATH)/bootloader_message_twrp/include
 
 LOCAL_C_INCLUDES += bionic
@@ -137,7 +139,7 @@ LOCAL_SHARED_LIBRARIES :=
 
 LOCAL_STATIC_LIBRARIES += libguitwrp
 LOCAL_SHARED_LIBRARIES += libaosprecovery libz libc libcutils libstdc++ libtar libblkid libminuitwrp libminadbd libmtdutils libtwadbbu libbootloader_message_twrp
-LOCAL_SHARED_LIBRARIES += libcrecovery libtwadbbu libtwrpdigest libc++
+LOCAL_SHARED_LIBRARIES += libcrecovery libtwadbbu libtwrpdigest libc++ libusb
 
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -lt 23; echo $$?),0)
     LOCAL_SHARED_LIBRARIES += libstlport

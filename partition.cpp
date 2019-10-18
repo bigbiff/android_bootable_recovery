@@ -44,6 +44,8 @@
 #include "set_metadata.h"
 #include "gui/gui.hpp"
 #include "adbbu/libtwadbbu.hpp"
+#include "twrpUSBManager.hpp"
+
 #ifdef TW_INCLUDE_CRYPTO
 	#include "crypto/fde/cryptfs.h"
 	#ifdef TW_INCLUDE_FBE
@@ -598,6 +600,8 @@ bool TWPartition::Process_Fstab_Line(const char *fstab_line, bool Display_Error,
 		}
 	}
 
+	twrpUSBManager usbManager;
+	usbManager.initDeviceScanner();
 	return true;
 }
 
