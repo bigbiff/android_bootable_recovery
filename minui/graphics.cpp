@@ -25,6 +25,7 @@
 
 #include <android-base/properties.h>
 
+#ifndef MSM_BSP
 #include "graphics_adf.h"
 #endif
 #include "graphics_drm.h"
@@ -442,13 +443,9 @@ void gr_fill(int x1, int y1, int x2, int y2) {
       incr_y(&p, row_pixels);
     }
   }
-  } // close brace to maintain separation between uint16_t p and uint32_t p
 }
 
 void gr_blit_32to16(GRSurface* source, int sx, int sy, int w, int h, int dx, int dy) {
-  if (rotation)
-    printf("gr_blit_32to16 does not support rotation!\n"); // but we'll draw something in the wrong spot anyway because, why not!
-
   dx += overscan_offset_x;
   dy += overscan_offset_y;
 
