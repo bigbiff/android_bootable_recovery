@@ -60,11 +60,11 @@ RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/sbin/fsck.fat
 RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/sbin/fatlabel
 RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/sbin/mkfs.fat
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 27; echo $$?),0)
-    ifeq ($(shell test $(PLATFORM_SDK_VERSION) -le 28; echo $$?),0)
-        RELINK_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/adbd
-    else
+    ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 29; echo $$?),0)
         RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/bin/adbd
         RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/bin/fastbootd
+    else
+        RELINK_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/adbd
     endif
 endif
 RELINK_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/e2fsck
@@ -93,6 +93,10 @@ ifeq ($(TARGET_ARCH), arm64)
 endif
 #RELINK_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/twrpmtp
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 29; echo $$?),0)
+    RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/android.hardware.fastboot@1.0.so
+    RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/android.hardware.health@1.0.so
+    RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/android.hardware.health@2.0.so
+    RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/ld-android.so
     RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libc.so
     RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libdl.so
     RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libm.so
@@ -129,7 +133,10 @@ ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 29; echo $$?),0)
     RELINK_SOURCE_FILES += $(TARGET_ROOT_OUT)/../system/bin/servicemanager
     RELINK_SOURCE_FILES += $(TARGET_ROOT_OUT)/../system/bin/vold_prepare_subdirs
     RELINK_SOURCE_FILES += $(TARGET_ROOT_OUT)/../vendor/bin/vndservicemanager
-    RELINK_SOURCE_FILES +=   $(TARGET_RECOVERY_ROOT_OUT)/system/bin/toybox
+    RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/bin/toybox
+    # RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/bin/charger
+    RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/bin/ueventd
+    RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/bin/watchdogd
 else
     RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libc.so
     RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libdl.so
@@ -242,6 +249,7 @@ endif
 endif
 
 RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libext4_utils.so
+
 RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libaosprecovery.so
 ifneq ($(TW_INCLUDE_JPEG),)
     RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libjpeg.so
@@ -407,7 +415,7 @@ ifeq ($(TARGET_USERIMAGES_USE_F2FS), true)
 endif
 ifneq ($(wildcard system/core/reboot/Android.*),)
     ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 29; echo $$?),0)
-        RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/sbin/reboot
+        RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/bin/reboot
     else
         RELINK_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/reboot
     endif
@@ -476,7 +484,6 @@ ifeq ($(shell test $(PLATFORM_SDK_VERSION) -gt 25; echo $$?),0)
     RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libziparchive.so
     RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libext2_blkid.so
     RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libext2_quota.so
-
     RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libhidl-gen-utils.so
     RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libvintf.so
     RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libtinyxml2.so
@@ -514,7 +521,7 @@ endif
 #toybox links
 toybox_links := acpi base64 basename bc blockdev cal cat chcon chgrp chmod chown chroot chrt cksum clear \
     cmp comm cp cpio cut date dd devmem df diff dirname dmesg dos2unix du echo env expand expr fallocate \
-    false file find flock fmt free fsync getconf getenforce getprop groups gunzip gzip head hostname hwclock i2cdetect \
+    false file find flock fmt free fsync getconf getenforce getprop groups head hostname hwclock i2cdetect \
     i2cdump i2cget i2cset iconv id ifconfig inotifyd insmod install ionice iorenice kill killall ln load_policy \
     log logname losetup ls lsmod lsof lspci lsusb md5sum microcom mkdir mkfifo mknod mkswap mktemp modinfo modprobe \
     more mount mountpoint mv nc netcat netstat nice nl nohup nproc nsenter od paste patch pgrep pidof pkill pmap \
@@ -525,21 +532,25 @@ toybox_links := acpi base64 basename bc blockdev cal cat chcon chgrp chmod chown
     xargs xxd yes zcat
 TOYBOX_LINKS := $(addprefix $(TARGET_RECOVERY_ROOT_OUT)/system/bin/, $(toybox_links))
 
-#relink recovery executables linker to /sbin and move symlinks
+system_files_to_remove := android.hardware.boot@1.0.so libbase.so libc++.so \
+    libcrypto.so libcutils.so libext4_utils.so liblog.so libselinux.so libutils.so libziparchive.so
+SYSTEM_FILES_TO_REMOVE := $(addprefix $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/, $(system_files_to_remove))
+$(warning files: $(SYSTEM_FILES_TO_REMOVE))
+
+#relink recovery executables linker to /sbin
 include $(CLEAR_VARS)
 LOCAL_MODULE := relink
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES
 LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/sbin
-LOCAL_POST_INSTALL_CMD += $(RELINK) $(TARGET_RECOVERY_ROOT_OUT)/sbin $(RELINK_SOURCE_FILES) && \
-    cp $(TOYBOX_LINKS) $(TARGET_RECOVERY_ROOT_OUT)/sbin/
+LOCAL_POST_INSTALL_CMD += $(RELINK) $(TARGET_RECOVERY_ROOT_OUT)/sbin $(RELINK_SOURCE_FILES)
 TARGET_RELINK_FILES := $(notdir $(RELINK_SOURCE_FILES))
 TARGET_BASE_RELINK_MODULES := $(basename $(TARGET_RELINK_FILES))
 TARGET_RELINK_MODULES :=  $(filter-out libdexfile, $(TARGET_BASE_RELINK_MODULES))
 LOCAL_REQUIRED_MODULES += $(TARGET_RELINK_MODULES)
 include $(BUILD_PHONY_PACKAGE)
 
-#relink init
+#build out TWRP ramdisk
 include $(CLEAR_VARS)
 LOCAL_MODULE := twrp_ramdisk
 LOCAL_MODULE_TAGS := optional
@@ -547,10 +558,11 @@ LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES
 LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)
 RELINK_INIT := $(TARGET_RECOVERY_ROOT_OUT)/system/bin/init
 LOCAL_POST_INSTALL_CMD += $(RELINK) $(TARGET_RECOVERY_ROOT_OUT)/ $(RELINK_INIT) && \
-    cp $(TARGET_RECOVERY_ROOT_OUT)/system/bin/ueventd $(TARGET_RECOVERY_ROOT_OUT)/sbin/ && \
     ln -sf /init $(TARGET_RECOVERY_ROOT_OUT)/sbin/init && \
     ln -sf /init $(TARGET_RECOVERY_ROOT_OUT)/system/bin/init && \
+    mv $(TOYBOX_LINKS) $(TARGET_RECOVERY_ROOT_OUT)/sbin/ 2>/dev/null && \
     mkdir -p $(TARGET_RECOVERY_ROOT_OUT)/system/etc/selinux/ && \
+    rm -f $(SYSTEM_FILES_TO_REMOVE) \
     cp $(TARGET_ROOT_OUT)/../system/etc/selinux/plat_service_contexts $(TARGET_RECOVERY_ROOT_OUT)/system/etc/selinux/plat_service_contexts && \
     cp $(TARGET_ROOT_OUT)/../system/etc/selinux/plat_hwservice_contexts $(TARGET_RECOVERY_ROOT_OUT)/system/etc/selinux/plat_hwservice_contexts && \
     cp $(TARGET_ROOT_OUT)/../vendor/etc/selinux/vndservice_contexts $(TARGET_RECOVERY_ROOT_OUT)/system/etc/selinux/vndservice_contexts && \
