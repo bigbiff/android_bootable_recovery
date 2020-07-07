@@ -1465,7 +1465,7 @@ bool TWPartition::Mount(bool Display_Error) {
 		string cmd = "/sbin/exfat-fuse -o big_writes,max_read=131072,max_write=131072 " + Actual_Block_Device + " " + Mount_Point;
 		LOGINFO("cmd: %s\n", cmd.c_str());
 		string result;
-		if (TWFunc::Exec_Cmd(cmd, result) != 0) {
+		if (TWFunc::Exec_Cmd(cmd, result, false) != 0) {
 			LOGINFO("exfat-fuse failed to mount with result '%s', trying vfat\n", result.c_str());
 			Current_File_System = "vfat";
 		} else {
@@ -3399,4 +3399,16 @@ void TWPartition::Set_Can_Be_Backed_Up(bool val) {
 void TWPartition::Set_Can_Be_Wiped(bool val) {
 	Can_Be_Wiped = val;
 	Wipe_Available_in_GUI = val;
+}
+
+std::string TWPartition::Get_Backup_FileName() {
+	return Backup_FileName;
+}
+
+std::string TWPartition::Get_Display_Name() {
+	return Display_Name;
+}
+
+bool TWPartition::Is_SlotSelect() {
+	return SlotSelect;
 }
