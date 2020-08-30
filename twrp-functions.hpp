@@ -33,15 +33,15 @@ using namespace std;
 #define CACHE_LOGS_DIR "/cache/"		// For devices with a dedicated cache partition
 #define DATA_LOGS_DIR "/data/"			// For devices that do not have a dedicated cache partition
 
-typedef enum
-{
+typedef enum {
 	rb_current = 0,
 	rb_system,
 	rb_recovery,
 	rb_poweroff,
-	rb_bootloader,     // May also be fastboot
+	rb_bootloader,
 	rb_download,
 	rb_edl,
+	rb_fastboot
 } RebootCommand;
 
 enum Archive_Type {
@@ -51,7 +51,6 @@ enum Archive_Type {
 	COMPRESSED_ENCRYPTED
 };
 
-// Partition class
 class TWFunc
 {
 public:
@@ -115,7 +114,10 @@ public:
 	static int Property_Override(string Prop_Name, string Prop_Value); // Override properties (including ro. properties)
 	static bool Get_Encryption_Policy(fscrypt_encryption_policy &policy, std::string path); // return encryption policy for path
 	static bool Set_Encryption_Policy(std::string path, const fscrypt_encryption_policy &policy); // set encryption policy for path
-	static void List_Mounts();
+	static void List_Mounts(); // List mounts from /proc/mounts
+	static void Clear_Bootloader_Message(); // remove startup bootloader argument from misc partition
+	static void enable_fastboot_mode(); // enable fastboot mode over usb
+	static void enable_adb_mode(); // enable adb mode over usb
 
 private:
 	static void Copy_Log(string Source, string Destination);

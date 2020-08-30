@@ -33,6 +33,7 @@
 #include <sys/wait.h>
 #include <dirent.h>
 #include <private/android_filesystem_config.h>
+#include <android-base/properties.h>
 
 #include <string>
 #include <sstream>
@@ -59,6 +60,7 @@ extern "C" {
 #include "rapidxml.hpp"
 #include "objects.hpp"
 #include "tw_atomic.hpp"
+#include "../twrpSocket.hpp"
 
 GUIAction::mapFunc GUIAction::mf;
 std::set<string> GUIAction::setActionsRunningInCallerThread;
@@ -201,6 +203,9 @@ GUIAction::GUIAction(xml_node<>* node)
 		ADD_ACTION(setlanguage);
 		ADD_ACTION(checkforapp);
 		ADD_ACTION(togglebacklight);
+		ADD_ACTION(enableadb);
+		ADD_ACTION(enablefastboot);
+		ADD_ACTION(enterrecoverymode);
 
 		// remember actions that run in the caller thread
 		for (mapFunc::const_iterator it = mf.begin(); it != mf.end(); ++it)
@@ -2240,5 +2245,21 @@ int GUIAction::fixabrecoverybootloop(std::string arg __unused)
 	op_status = 0;
 exit:
 	operation_end(op_status);
+	return 0;
+}
+
+
+int GUIAction::enableadb(std::string arg __unused) {
+	TWFunc::enable_adb_mode();
+	return 0;
+}
+
+int GUIAction::enablefastboot(std::string arg __unused) {
+	TWFunc::enable_fastboot_mode();
+	return 0;
+}
+
+int GUIAction::enterrecoverymode(std::string arg __unused) {
+	twrpSocket::enter_fastboot();
 	return 0;
 }

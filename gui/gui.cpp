@@ -33,6 +33,8 @@
 #include <sys/mount.h>
 #include <time.h>
 #include <unistd.h>
+#include <android-base/unique_fd.h>
+#include <cutils/sockets.h>
 
 extern "C"
 {
@@ -570,8 +572,7 @@ static int runPages(const char *page_name, const int stop_on_page_done)
 	int input_timeout_ms = 0;
 	int idle_frames = 0;
 
-	for (;;)
-	{
+	for (;;) {
 		loopTimer(input_timeout_ms);
 		FD_ZERO(&fdset);
 		timeout.tv_sec = 0;
@@ -650,8 +651,9 @@ static int runPages(const char *page_name, const int stop_on_page_done)
 			gui_changePage("main");
 			break;
 		}
-		if (DataManager::GetIntValue("tw_gui_done") != 0)
+		if (DataManager::GetIntValue("tw_gui_done") != 0) {
 			break;
+		}
 	}
 	if (ors_read_fd > 0)
 		close(ors_read_fd);
