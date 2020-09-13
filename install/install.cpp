@@ -643,15 +643,11 @@ int install_package(const std::string& path, bool should_wipe_cache, bool needs_
 
   int result;
   std::vector<std::string> log_buffer;
-  if (setup_install_mounts() != 0) {
-    LOG(ERROR) << "failed to set up expected mounts for install; aborting";
-    result = INSTALL_ERROR;
-  } else {
-    bool updater_wipe_cache = false;
-    result = really_install_package(path, &updater_wipe_cache, needs_mount, &log_buffer,
-                                    retry_count, &max_temperature);
-    should_wipe_cache = should_wipe_cache || updater_wipe_cache;
-  }
+ 
+  bool updater_wipe_cache = false;
+  result = really_install_package(path, &updater_wipe_cache, needs_mount, &log_buffer,
+                                  retry_count, &max_temperature);
+  should_wipe_cache = should_wipe_cache || updater_wipe_cache;
 
   // Measure the time spent to apply OTA update in seconds.
   std::chrono::duration<double> duration = std::chrono::system_clock::now() - start;
