@@ -1592,6 +1592,7 @@ int GUIAction::adbsideload(std::string arg __unused)
 		// int ret = apply_from_adb("/", &sideload_child_pid);
 		Device::BuiltinAction reboot_action = Device::REBOOT_BOOTLOADER;
 		int ret = ApplyFromAdb("/", &reboot_action);
+		sideload_child_pid = GetMiniAdbdPid();
 		DataManager::SetValue("tw_has_cancel", 0); // Remove cancel button from gui now that the zip install is going to start
 
 		if (ret != 0) {
@@ -1612,17 +1613,17 @@ int GUIAction::adbsideload(std::string arg __unused)
 				ret = 1; // failure
 			}
 		}
-		if (sideload_child_pid) {
-			LOGINFO("Signaling child sideload process to exit.\n");
-			struct stat st;
-			// Calling stat() on this magic filename signals the minadbd
-			// subprocess to shut down.
-			stat(FUSE_SIDELOAD_HOST_EXIT_PATHNAME, &st);
-			int status;
-			LOGINFO("Waiting for child sideload process to exit.\n");
-			waitpid(sideload_child_pid, &status, 0);
-		}
-		property_set("ctl.start", "adbd");
+		// if (sideload_child_pid) {
+		// 	LOGINFO("Signaling child sideload process to exit.\n");
+		// 	struct stat st;
+		// 	// Calling stat() on this magic filename signals the minadbd
+		// 	// subprocess to shut down.
+		// 	stat(FUSE_SIDELOAD_HOST_EXIT_PATHNAME, &st);
+		// 	int status;
+		// 	LOGINFO("Waiting for child sideload process to exit.\n");
+		// 	waitpid(sideload_child_pid, &status, 0);
+		// }
+		// property_set("ctl.start", "adbd");
 		TWFunc::Toggle_MTP(mtp_was_enabled);
 		reinject_after_flash();
 		operation_end(ret);
