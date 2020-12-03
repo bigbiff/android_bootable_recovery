@@ -42,7 +42,7 @@
 #include "../twrpRepacker.hpp"
 #include "../openrecoveryscript.hpp"
 
-#include "install/adb_install.h"
+#include "twrpinstall/adb_install.h"
 
 #include "fuse_sideload.h"
 #include "blanktimer.hpp"

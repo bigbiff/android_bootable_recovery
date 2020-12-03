@@ -122,7 +122,7 @@ LOCAL_C_INCLUDES += \
     $(LOCAL_PATH)/install/include \
     $(LOCAL_PATH)/verifier28/
 
-LOCAL_STATIC_LIBRARIES += libguitwrp
+# LOCAL_STATIC_LIBRARIES += libguitwrp
 LOCAL_SHARED_LIBRARIES += libz libc libcutils libstdc++ libtar libblkid libminuitwrp libminadbd libmtdutils libtwadbbu libbootloader_message
 LOCAL_SHARED_LIBRARIES += libcrecovery libtwadbbu libtwrpdigest libc++ libaosprecovery libinit libcrypto libbase libziparchive libselinux
 LOCAL_CFLAGS += -DUSE_28_VERIFIER
@@ -574,23 +574,25 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := libaosprecovery
 LOCAL_MODULE_TAGS := optional
 
-LOCAL_SRC_FILES := install/adb_install.cpp install/asn1_decoder.cpp install/fuse_sdcard_install.cpp \
-    install/get_args.cpp install/install.cpp install/installcommand.cpp install/legacy_property_service.cpp \
+LOCAL_SRC_FILES := install/adb_install.cpp install/asn1_decoder.cpp \
+    install/get_args.cpp install/install.cpp install/installcommand.cpp \
     install/package.cpp install/verifier.cpp install/wipe_data.cpp install/tw_atomic.cpp \
-    install/set_metadata.cpp verifier28/verifier.cpp install/zipwrap.cpp install/ZipUtil.cpp
+    install/set_metadata.cpp verifier28/verifier.cpp install/ZipUtil.cpp
 LOCAL_SHARED_LIBRARIES += libbase libbootloader_message libcrypto libext4_utils \
-    libfs_mgr libfusesideload libhidl-gen-utils libhidlbase \
+    libfs_mgr libfusesideload libhidl-gen-utils libhidlbase libotautil \
     liblog libselinux libtinyxml2 libutils libz libziparchive libcutils
 LOCAL_CFLAGS += -DRECOVERY_API_VERSION=$(RECOVERY_API_VERSION)
 LOCAL_SHARED_LIBRARIES += libc++
 LOCAL_CFLAGS := -std=gnu++2a
 LOCAL_C_INCLUDES += $(commands_TWRP_local_path)/install/include \
                     $(commands_TWRP_local_path)/recovery_ui/include \
+                    $(commands_TWRP_local_path)/recovery_utils/include \
                     $(commands_TWRP_local_path)/otautil/include \
                     $(commands_TWRP_local_path)/minadbd \
+                    $(commands_TWRP_local_path)/minadbd/include \
                     $(commands_TWRP_local_path)/minzip \
                     system/libvintf/include
-LOCAL_STATIC_LIBRARIES += libotautil libvintf_recovery libvintf libhidl-gen-utils
+LOCAL_STATIC_LIBRARIES += libotautil libvintf libhidl-gen-utils
 LOCAL_CFLAGS += -DRECOVERY_API_VERSION=$(RECOVERY_API_VERSION)
 
 ifeq ($(AB_OTA_UPDATER),true)
@@ -636,10 +638,11 @@ include $(commands_TWRP_local_path)/minadbd/Android.mk \
 
 # $(commands_TWRP_local_path)/otautil/Android.mk \
 
+#    $(commands_TWRP_local_path)/gui/Android.mk \
+
 #includes for TWRP
 include $(commands_TWRP_local_path)/injecttwrp/Android.mk \
     $(commands_TWRP_local_path)/htcdumlock/Android.mk \
-    $(commands_TWRP_local_path)/gui/Android.mk \
     $(commands_TWRP_local_path)/mmcutils/Android.mk \
     $(commands_TWRP_local_path)/bmlutils/Android.mk \
     $(commands_TWRP_local_path)/prebuilt/Android.mk \
