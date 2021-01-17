@@ -291,6 +291,7 @@ int main(int argc, char **argv) {
 	// Recovery needs to install world-readable files, so clear umask
 	// set by init
 	umask(0);
+	sleep(30);
 
 	Log_Offset = 0;
 

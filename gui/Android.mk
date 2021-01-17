@@ -6,7 +6,6 @@ LOCAL_MODULE := twrp
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := DATA
 LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
-
 # The extra blank line before *** is intentional to ensure it ends up on its own line
 define TW_THEME_WARNING_MSG
 
@@ -98,7 +97,6 @@ $(TWRP_RES_GEN):
 	cp -fr $(TWRP_THEME_LOC)/* $(TARGET_RECOVERY_ROOT_OUT)$(TWRES_PATH)
 
 LOCAL_GENERATED_SOURCES := $(TWRP_RES_GEN)
-#LOCAL_SRC_FILES := twrp
+LOCAL_SRC_FILES := twrp
 LOCAL_SRC_FILES := $(TWRP_RES_GEN)
-$(warning LOCAL_SRC_FILES: $(LOCAL_SRC_FILES))
 include $(BUILD_PREBUILT)
