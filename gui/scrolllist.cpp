@@ -318,7 +318,7 @@ void GUIScrollList::RenderItem(size_t itemindex __unused, int yPos, bool selecte
 	RenderStdItem(yPos, selected, NULL, "implement RenderItem!");
 }
 
-void GUIScrollList::RenderStdItem(int yPos, bool selected, ImageResource* icon, const char* text, int iconAndTextH)
+void GUIScrollList::RenderStdItem(int yPos, bool selected, ImageResource* icon, const char* text,  bool longLine, int iconAndTextH)
 {
 	if (hasHighlightColor && selected) {
 		// Highlight the item background of the selected item
@@ -350,7 +350,12 @@ void GUIScrollList::RenderStdItem(int yPos, bool selected, ImageResource* icon, 
 	if (mFont && mFont->GetResource()) {
 		int textX = mRenderX + maxIconWidth + 5;
 		int textY = yPos + (iconAndTextH / 2);
-		gr_textEx_scaleW(textX, textY, text, mFont->GetResource(), mRenderW, TEXT_ONLY_RIGHT, 0);
+		LOGINFO("longLine::%d\n", longLine);
+		if (longLine) {
+			gr_textEx_scaleW(textX, textY + 160, text, mFont->GetResource(), mRenderW / 1.5, TEXT_ONLY_RIGHT, 1);
+		} else {
+			gr_textEx_scaleW(textX, textY, text, mFont->GetResource(), mRenderW, TEXT_ONLY_RIGHT, 0);
+		}
 	}
 }
 

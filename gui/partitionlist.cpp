@@ -212,9 +212,12 @@ void GUIPartitionList::RenderItem(size_t itemindex, int yPos, bool selected)
 	// note: the "selected" parameter above is for the currently touched item
 	// don't confuse it with the more persistent "selected" flag per list item used below
 	ImageResource* icon = mList.at(itemindex).selected ? mIconSelected : mIconUnselected;
-	const std::string& text = mList.at(itemindex).Display_Name;
-
-	RenderStdItem(yPos, selected, icon, text.c_str());
+	// const std::string& text = mList.at(itemindex).Display_Name;
+	std::string text = "system vendor product odm abc def ghi jkl mnopqrst uvwzyz";
+	if (text.length() > 30) 
+		RenderStdItem(yPos - 20, selected, icon, text.c_str(), true, 1);
+	else
+		RenderStdItem(yPos, selected, icon, text.c_str(), false, 0);
 }
 
 void GUIPartitionList::NotifySelect(size_t item_selected)
