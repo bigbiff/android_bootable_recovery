@@ -25,6 +25,7 @@
 #include <time.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <modprobe/modprobe.h>
 #include <sys/mount.h>
 #include <sys/reboot.h>
 #include <sys/sendfile.h>
@@ -38,6 +39,9 @@
 #include <cctype>
 #include <algorithm>
 #include <selinux/label.h>
+
+#include <android-base/strings.h>
+
 #include "twrp-functions.hpp"
 #include "twcommon.h"
 #include "gui/gui.hpp"
@@ -782,17 +786,32 @@ int TWFunc::read_file(string fn, uint64_t& results) {
 	return -1;
 }
 
-int TWFunc::write_to_file(const string& fn, const string& line) {
+bool TWFunc::write_to_file(const string& fn, const string& line) {
 	FILE *file;
 	file = fopen(fn.c_str(), "w");
 	if (file != NULL) {
 		fwrite(line.c_str(), line.size(), 1, file);
 		fclose(file);
-		return 0;
+		return true;
 	}
 	LOGINFO("Cannot find file %s\n", fn.c_str());
-	return -1;
+	return false;
 }
+
+bool TWFunc::write_to_file(const string& fn, const std::vector<string> lines) {
+	FILE *file;
+	file = fopen(fn.c_str(), "a+");
+	if (file != NULL) {
+		for (auto&& line: lines) {
+			fwrite(line.c_str(), line.size(), 1, file);
+			fwrite("\n", sizeof(char), 1, file);
+		}
+		fclose(file);
+		return true;
+	}
+	return false;
+}
+
 
 bool TWFunc::Try_Decrypting_Backup(string Restore_Path, string Password) {
 	DIR* d;
@@ -1461,5 +1480,38 @@ string TWFunc::Check_For_TwrpFolder() {
 
 exit:
 	return TW_DEFAULT_RECOVERY_FOLDER;
+}
+
+bool TWFunc::Load_Vendor_Modules() {
+	// struct utsname uts;
+	// if (uname(&uts)) {
+	// 	LOGERR("Unable to query kernel for version info\n");
+	// }
+	DIR* d;
+	struct dirent* de;
+	std::vector<string> kernel_modules;
+	std::vector<string> kernel_modules_requested = split_string(EXPAND(TW_LOAD_VENDOR_MODULES), ' ', true);
+
+	d = opendir(VENDOR_MODULE_DIR);
+	if (d != nullptr) {
+		while ((de = readdir(d)) != nullptr) {
+			std::string kernel_module = de->d_name;
+			if (de->d_type == DT_REG) {
+				if (android::base::EndsWith(kernel_module, ".ko")) {
+					for (auto&& requested:kernel_modules_requested) {
+						if (kernel_module == requested)
+							kernel_modules.push_back(kernel_module);
+					}
+					continue;
+				}
+			}
+		} 
+		write_to_file("/vendor/lib/modules/modules.load.twrp", kernel_modules);
+		Modprobe m({VENDOR_MODULE_DIR}, "/vendor/lib/modules/modules.load.twrp");
+		m.LoadListedModules(false);
+        int modules_loaded = m.GetModuleCount();
+		LOGINFO("modules_loaded: %d\n", modules_loaded);
+	}
+	return true;
 }
 #endif // ndef BUILD_TWRPTAR_MAIN
